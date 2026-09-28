@@ -291,6 +291,37 @@ class EpubTranslationAdapter(TranslationAdapter[etree._Element, bool]):
 
         return success, stats
 
+    @staticmethod
+    def _restore_source_body(
+        body: etree._Element,
+        original_body_html: str,
+        file_href: Optional[str],
+        log_callback: Optional[Callable],
+    ) -> Optional[etree._Element]:
+        """Swap `body` for the source body a Plain Text Mode state carries.
+
+        Returns the restored source body, or None when the stored markup cannot
+        be parsed or has nowhere to go - in which case `body` is left untouched.
+        """
+        parent = body.getparent()
+        source_body = None
+        if parent is not None:
+            try:
+                parser = etree.XMLParser(encoding='utf-8', recover=True, remove_blank_text=False)
+                source_body = etree.fromstring(original_body_html.encode('utf-8'), parser)
+            except etree.XMLSyntaxError:
+                source_body = None
+        if source_body is None:
+            if log_callback:
+                log_callback(
+                    "plain_text_source_body_unusable",
+                    f"⚠️ {file_href or 'document'}: the checkpoint's source body could not "
+                    "be restored - keeping this file as it is and its retry for later"
+                )
+            return None
+        parent.replace(body, source_body)
+        return source_body
+
     async def _translate_plain_text(
         self,
         doc_root: etree._Element,
@@ -322,14 +353,18 @@ class EpubTranslationAdapter(TranslationAdapter[etree._Element, bool]):
 
         Segment-level checkpointing reuses the XHTML partial-state machinery:
         a rate limit or an interruption leaves a resumable checkpoint behind,
-        and `resume_state` restarts at the first unattempted segment. The state
-        is deleted by the EPUB translator once the file has been saved.
+        and `resume_state` restarts at the first unattempted segment and
+        retries every segment that kept its source text (issue #285). The EPUB
+        translator deletes the state once the file has been saved, unless a
+        segment is still untranslated: then the state, which carries the
+        source body, is what the next pass re-enters the file with.
         """
         from .plain_extractor import extract_plain_paragraphs, replace_body_with_paragraphs
         from .translation_metrics import TranslationMetrics
         from src.core.common.plain_text_pipeline import translate_paragraphs_plain
         from src.core.common.plain_text_checkpoint import (
             build_plain_checkpoint_hook,
+            is_plain_text_state,
             resume_plain_segments,
         )
 
@@ -341,6 +376,26 @@ class EpubTranslationAdapter(TranslationAdapter[etree._Element, bool]):
             if log_callback:
                 log_callback("plain_text_no_body", f"⚠️ {file_href or 'document'}: no <body> found, skipping")
             return False, TranslationMetrics()
+
+        # A file re-entered to retry its untranslated segments was already
+        # saved, so the copy on disk is its translated rebuild: re-extracting
+        # that would yield other paragraphs (bilingual twins, image wrappers,
+        # flattened tags) and the resume guard below would restart the file on
+        # translated text. The state carries the source body for exactly this
+        # case (issue #285); a state without one (a file paused mid-way, whose
+        # copy on disk is still the source) leaves the body as it is.
+        disk_body = None
+        if is_plain_text_state(resume_state) and resume_state.original_body_html:
+            disk_body = body
+            body = self._restore_source_body(body, resume_state.original_body_html, file_href, log_callback)
+            if body is None:
+                # Translating the copy on disk would translate translated text.
+                # Failing the file keeps that copy and the state, so the retry
+                # is still owed on the next pass.
+                return False, TranslationMetrics()
+
+        # Captured before extraction, which folds <ruby> in place.
+        original_body_html = etree.tostring(body, encoding='unicode')
 
         paragraphs_text, paragraphs_tag, images_by_paragraph, paragraphs_attrib = extract_plain_paragraphs(body)
 
@@ -366,8 +421,12 @@ class EpubTranslationAdapter(TranslationAdapter[etree._Element, bool]):
             paragraph_count=len(paragraphs_text),
             prompt_options=prompt_options,
             bilingual=bilingual_flag,
+            original_body_html=original_body_html,
         )
 
+        # The statuses and counters only mean something next to the prefix they
+        # were written with, so they follow it when the resume guard accepts it.
+        resumed = resume_segments is not None
         translated, stats, was_interrupted = await translate_paragraphs_plain(
             paragraphs=paragraphs_text,
             source_language=source_language,
@@ -383,12 +442,23 @@ class EpubTranslationAdapter(TranslationAdapter[etree._Element, bool]):
             parallel_workers=parallel_workers,
             resume_segments=resume_segments,
             resume_translated=resume_translated,
+            resume_statuses=resume_state.chunk_statuses if resumed else None,
+            resume_stats=resume_state.stats if resumed else None,
             checkpoint_hook=checkpoint_hook,
+            # A failed segment is persisted as CHUNK_UNTRANSLATED and retried by
+            # the next pass, which makes it a fallback, not a terminal failure.
+            count_failures_as_fallback=True,
         )
 
         if was_interrupted:
             # Caller (EPUB translator) treats failed translation as keeping original;
             # we leave the body untouched so the partial output keeps the source text.
+            # A swapped-in source body is not "untouched": the caller writes this
+            # document into the partial EPUB, so the translated copy the pass
+            # started from goes back in place. What the pass repaired is in the
+            # state and is not lost.
+            if disk_body is not None:
+                body.getparent().replace(body, disk_body)
             return False, stats
 
         replace_body_with_paragraphs(

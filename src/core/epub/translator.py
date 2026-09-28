@@ -188,9 +188,18 @@ async def translate_epub_file(
             # 2. Parse manifest
             manifest_data = _parse_epub_manifest(temp_dir, log_callback)
 
-            # 2.5. Restore checkpoint if resuming
+            # 2.5. Restore checkpoint if resuming. The chunks are counted
+            # first: the restore overwrites every finished file with its
+            # translation, and counting those instead of the source gave a
+            # resumed job a different total than the run it continues.
             restored_docs = {}
+            precounted = None
             if checkpoint_manager and translation_id and resume_from_index > 0:
+                precounted = await _precount_chunks(
+                    manifest_data['content_files'], manifest_data['opf_dir'],
+                    max_tokens_per_chunk, log_callback,
+                    plain_text_mode=bool(prompt_options and prompt_options.get('plain_text_mode')),
+                )
                 restored_docs = await _restore_checkpoint_files(
                     checkpoint_manager, translation_id, temp_dir,
                     resume_from_index, manifest_data['opf_dir'], log_callback
@@ -217,7 +226,8 @@ async def translate_epub_file(
                 prompt_options=prompt_options,
                 restored_docs=restored_docs,
                 parallel_workers=parallel_workers,
-                retry_token_aligned=retry_token_aligned
+                retry_token_aligned=retry_token_aligned,
+                precounted=precounted
             )
 
             # 4. Save translated files
@@ -1081,7 +1091,8 @@ async def _process_all_content_files(
     prompt_options: Optional[Dict] = None,
     restored_docs: Optional[Dict[str, etree._Element]] = None,
     parallel_workers: int = 1,
-    retry_token_aligned: bool = False
+    retry_token_aligned: bool = False,
+    precounted: Optional[Tuple[int, List[int]]] = None
 ) -> Dict:
     """
     Process all XHTML content files using GenericTranslationOrchestrator.
@@ -1109,6 +1120,10 @@ async def _process_all_content_files(
             those chunks are never in the automatic work set (D3). When on, the
             re-entry tickets are widened to the files listed in
             `epub_degraded_units` and to those files' degraded chunk indices.
+        precounted: (total_chunks, chunks_per_file) counted by the caller
+            before the checkpoint restore replaced finished files with their
+            translations. When None the files are counted here, which is only
+            right when nothing has been restored yet.
 
     Returns:
         Dictionary with processing results, including 'unfinished_units':
@@ -1120,11 +1135,13 @@ async def _process_all_content_files(
     from .translation_metrics import TranslationMetrics
 
     # Pre-count chunks for accurate progress tracking
-    plain_text_mode = bool(prompt_options and prompt_options.get('plain_text_mode'))
-    total_chunks, chunks_per_file = await _precount_chunks(
-        content_files, opf_dir, max_tokens_per_chunk, log_callback,
-        plain_text_mode=plain_text_mode,
-    )
+    if precounted is not None:
+        total_chunks, chunks_per_file = precounted
+    else:
+        total_chunks, chunks_per_file = await _precount_chunks(
+            content_files, opf_dir, max_tokens_per_chunk, log_callback,
+            plain_text_mode=bool(prompt_options and prompt_options.get('plain_text_mode')),
+        )
 
     # The progress denominator is the translation chunk count. In-translation
     # refinement (CLI --refine) is a per-file polish pass reported via logs; it
@@ -1153,6 +1170,18 @@ async def _process_all_content_files(
             job_progress = job.get('progress') or {}
             snapshot = job_progress.get('epub_accumulated_stats')
             _restore_accumulated_stats(snapshot, accumulated_stats)
+            # Only Plain Text Mode ever counted EPUB `failed_chunks`, and it now
+            # records those segments as retryable fallbacks instead. A count
+            # restored here was written before that: the segments kept their
+            # source text and nothing recorded where they are, so no pass can
+            # retry them and the job stays partial. Say so, once, rather than
+            # letting a resume look like it silently ignored them (issue #285).
+            if accumulated_stats.failed_chunks and log_callback:
+                log_callback("epub_legacy_failed_chunks",
+                             f"⚠️ {accumulated_stats.failed_chunks} chunk(s) from an earlier "
+                             f"pass kept their source text but were not recorded for "
+                             f"retry, so they cannot be retried. Translate the book "
+                             f"again to fix them.")
 
     # Everything in the emitted cumulative counters that was NOT produced by
     # this pass. The UI divides by a per-run denominator, so it needs the
@@ -1347,7 +1376,10 @@ async def _process_all_content_files(
         # unfinished chunks and has a partial state to re-enter it with.
         retry_indices = retry_tickets.get(content_href)
         if file_idx < resume_from_index and not retry_indices:
-            completed_files += 1
+            # A restored file already seeded completed_files; counting it again
+            # here reported twice the book's file count after a resume.
+            if _resolve_content_path(opf_dir, content_href) not in parsed_xhtml_docs:
+                completed_files += 1
             continue
 
         if retry_indices and log_callback:

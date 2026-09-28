@@ -105,11 +105,19 @@ def build_plain_checkpoint_hook(
     paragraph_count: int,
     prompt_options: Optional[Dict[str, Any]] = None,
     bilingual: bool = False,
-) -> Optional[Callable[[List[Dict[str, Any]], List[str], int, Dict[str, Any]], None]]:
+    original_body_html: str = "",
+) -> Optional[Callable[..., None]]:
     """Build the ``checkpoint_hook`` for ``translate_paragraphs_plain``.
 
     Returns None when there is nothing to write against (no manager, no job id
     or no file identifier); the pipeline then skips checkpointing entirely.
+
+    ``original_body_html`` is the serialized SOURCE ``<body>``. The EPUB adapter
+    passes it because a finished file that still holds untranslated segments
+    keeps its state, and the next pass re-enters it from a copy on disk that
+    has already been replaced by its translated rebuild (issue #285): the state
+    is then the only place the source structure (block tags, attributes,
+    anchored images) can be read back from.
     """
     if not (checkpoint_manager and translation_id and file_href):
         return None
@@ -119,8 +127,14 @@ def build_plain_checkpoint_hook(
         prefix: List[str],
         next_index: int,
         stats_dict: Dict[str, Any],
+        chunk_statuses: Optional[List[str]] = None,
     ) -> None:
-        """Persist the contiguous translated prefix; resume restarts at next_index."""
+        """Persist the contiguous translated prefix; resume restarts at next_index.
+
+        ``chunk_statuses`` records which segments of the prefix fell back to
+        their source text, so a later pass retries them (issue #285). None
+        leaves the field unset, which loads as "whole prefix translated".
+        """
         now = _utc_now_iso()
         state = XHTMLTranslationState(
             file_path=file_href or '',
@@ -136,7 +150,7 @@ def build_plain_checkpoint_hook(
             placeholder_format=("", ""),
             translated_chunks=list(prefix),
             current_chunk_index=next_index,
-            original_body_html="",
+            original_body_html=original_body_html or "",
             doc_metadata={
                 'plain_text_mode': True,
                 'paragraph_count': paragraph_count,
@@ -148,6 +162,7 @@ def build_plain_checkpoint_hook(
             prompt_options=prompt_options,
             bilingual=bilingual,
             original_chunks=None,
+            chunk_statuses=list(chunk_statuses) if chunk_statuses is not None else None,
         )
         checkpoint_manager.save_xhtml_partial_state(translation_id, file_href, state)
 

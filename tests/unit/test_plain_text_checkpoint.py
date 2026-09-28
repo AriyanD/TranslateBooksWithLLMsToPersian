@@ -58,12 +58,13 @@ class _HookRecorder:
         self.calls = []
         self.fail = fail
 
-    def __call__(self, segments, prefix, next_index, stats_dict):
+    def __call__(self, segments, prefix, next_index, stats_dict, chunk_statuses=None):
         self.calls.append({
             'segments': segments,
             'prefix': list(prefix),
             'next_index': next_index,
             'stats': stats_dict,
+            'statuses': list(chunk_statuses) if chunk_statuses is not None else None,
         })
         if self.fail:
             raise RuntimeError("checkpoint backend unavailable")

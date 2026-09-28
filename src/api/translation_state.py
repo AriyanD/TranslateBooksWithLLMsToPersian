@@ -199,13 +199,18 @@ class TranslationStateManager:
             return False
 
         job = checkpoint_data['job']
+        stats = copy.deepcopy(job.get('progress') or {})
+        # The stored start_time is when the job was first created. Keeping it
+        # made every resumed pass report the whole wall-clock time since then,
+        # pauses included, as its elapsed time (issue #285).
+        stats['start_time'] = time.time()
         with self._lock:
             # Restore job into in-memory state
             # Use deepcopy for config to prevent mutation of stored config
             self._translations[translation_id] = {
                 'status': 'paused',  # Will be set to 'running' when resumed
                 'progress': 0,
-                'stats': copy.deepcopy(job['progress']),
+                'stats': stats,
                 'logs': [f"[{datetime.now().strftime('%H:%M:%S')}] Job restored from checkpoint."],
                 'result': None,
                 'config': copy.deepcopy(job['config']),
