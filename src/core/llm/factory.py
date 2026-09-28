@@ -10,7 +10,7 @@ import os
 from src.config import (
     API_ENDPOINT, DEFAULT_MODEL, OLLAMA_NUM_CTX,
     OPENAI_API_KEY,
-    OPENROUTER_API_KEY, OPENROUTER_MODEL,
+    OPENROUTER_API_KEY, OPENROUTER_MODEL, OPENROUTER_DISABLE_THINKING,
     MISTRAL_API_KEY, MISTRAL_MODEL, MISTRAL_API_ENDPOINT,
     DEEPSEEK_API_KEY, DEEPSEEK_MODEL, DEEPSEEK_API_ENDPOINT,
     DEEPSEEK_DISABLE_THINKING,
@@ -123,7 +123,8 @@ def create_llm_provider(provider_type: str = "ollama", **kwargs) -> LLMProvider:
         )
         return OpenRouterProvider(
             api_key=api_key,
-            model=kwargs.get("model", OPENROUTER_MODEL)
+            model=kwargs.get("model", OPENROUTER_MODEL),
+            disable_thinking=kwargs.get("openrouter_disable_thinking", OPENROUTER_DISABLE_THINKING)
         )
     elif provider_type.lower() == "mistral":
         api_key = _require_key(
