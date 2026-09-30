@@ -211,7 +211,9 @@ class GenericTranslator:
             )
 
             # 6. Translate each unit (sequentially, or with continuous concurrency)
-            from src.config import resolve_parallel_workers, UNIT_VALIDATION_RETRIES
+            from src.config import (
+                resolve_parallel_workers, UNIT_VALIDATION_RETRIES, SAVE_RAW_LLM_RESPONSES
+            )
             from src.core.common.parallel import aclosing, iter_ordered_concurrent
             from src.core.llm.exceptions import RateLimitError
 
@@ -219,6 +221,8 @@ class GenericTranslator:
             sequential = workers == 1
             prompt_options = llm_kwargs.get('prompt_options', {})
             max_validation_attempts = 1 + max(0, UNIT_VALIDATION_RETRIES)
+
+            raw_log = self._open_raw_response_log(log_callback) if SAVE_RAW_LLM_RESPONSES else None
 
             last_context = ""
             failed_count = 0
@@ -242,6 +246,11 @@ class GenericTranslator:
                 result = None
 
                 for attempt in range(max_validation_attempts):
+                    record_raw = None
+                    if raw_log is not None:
+                        def record_raw(response, _attempt=attempt + 1):
+                            raw_log.record(i, _attempt, response, model_name)
+
                     result = await generate_translation_request(
                         main_content=unit.content,
                         context_before=unit.context_before,
@@ -252,7 +261,8 @@ class GenericTranslator:
                         model=model_name,
                         llm_client=llm_client,
                         log_callback=log_callback,
-                        prompt_options=attempt_options
+                        prompt_options=attempt_options,
+                        raw_response_callback=record_raw
                     )
 
                     # API failure / empty result: existing failure semantics.
@@ -270,13 +280,7 @@ class GenericTranslator:
                             f"Unit {i+1}/{total_units}: {feedback} "
                             f"(attempt {attempt+1}/{max_validation_attempts})")
 
-                    reinforced = (
-                        f"CRITICAL: Your previous response was structurally "
-                        f"incomplete ({feedback}). You MUST reproduce every "
-                        f"[N] index marker from the input exactly once, in "
-                        f"order, each followed by its translation. Do NOT "
-                        f"merge, drop or renumber markers."
-                    )
+                    reinforced = self.adapter.get_validation_retry_instructions(feedback)
                     attempt_options = {
                         **(prompt_options or {}),
                         'custom_instructions': (
@@ -494,6 +498,29 @@ class GenericTranslator:
                 await self.adapter.cleanup()
             except Exception:
                 pass
+
+    def _open_raw_response_log(self, log_callback: Optional[Callable]):
+        """Open the job's raw-response file next to the checkpoint database.
+
+        Returns None (and logs why) when the file cannot be created, so a
+        read-only data directory never stops a translation.
+        """
+        from src.persistence.raw_response_log import RawResponseLog
+
+        db = getattr(self.checkpoint_manager, 'db', None)
+        db_path = getattr(db, 'db_path', None)
+        data_dir = Path(db_path).parent if db_path else Path("data")
+        try:
+            raw_log = RawResponseLog(data_dir, self.translation_id)
+        except OSError as e:
+            if log_callback:
+                log_callback("raw_responses_unavailable",
+                    f"Could not open the raw response log: {e}")
+            return None
+        if log_callback:
+            log_callback("raw_responses_enabled",
+                f"Raw LLM responses are saved to {raw_log.path}")
+        return raw_log
 
     def __repr__(self) -> str:
         return (

@@ -11,6 +11,13 @@ import tiktoken
 from src.config import SENTENCE_TERMINATORS
 
 
+def count_tokens(text: str) -> int:
+    """Count tokens with the same encoding the chunker sizes chunks with."""
+    if not text:
+        return 0
+    return len(tiktoken.get_encoding("cl100k_base").encode(text))
+
+
 def _chunk(text: str, join_before: str) -> Dict[str, str]:
     """Build a raw chunk record.
 
@@ -108,6 +115,40 @@ class TokenChunker:
 
         return sentences
 
+    @staticmethod
+    def split_paragraph_into_lines(paragraph: str) -> List[str]:
+        """
+        Split a block on single newlines, dropping blank lines.
+
+        Many plain-text books (most Chinese web novels among them) put one
+        paragraph per line with no blank line in between, so the blank-line
+        split sees the whole file, or whole chapters, as a single paragraph.
+
+        Args:
+            paragraph: Input text block
+
+        Returns:
+            List of non-empty lines, trailing whitespace removed
+        """
+        return [line.rstrip() for line in paragraph.split('\n') if line.strip()]
+
+    def _edge_context(self, chunk_text: str, last: bool) -> str:
+        """
+        Return the last (or first) paragraph of a chunk, for use as context.
+
+        Falls back to the last (or first) line when the chunk has no blank
+        lines, so a line-split chunk does not hand its whole body over as
+        context to its neighbour.
+        """
+        paragraphs = self.split_into_paragraphs(chunk_text)
+        if not paragraphs:
+            return ""
+        edge = paragraphs[-1] if last else paragraphs[0]
+        lines = self.split_paragraph_into_lines(edge)
+        if len(lines) > 1:
+            return lines[-1] if last else lines[0]
+        return edge
+
     def _chunk_units(self, units: List[str], separator: str = "\n\n") -> List[Dict[str, str]]:
         """
         Chunk a list of text units (paragraphs or sentences) into appropriately sized chunks.
@@ -150,12 +191,18 @@ class TokenChunker:
                     current_units = []
                     current_tokens = 0
 
-                # If it's a paragraph, try splitting into sentences
-                sentences = self.split_paragraph_into_sentences(unit)
-                if len(sentences) > 1:
-                    # Recursively chunk sentences; those chunks are continuations
-                    # of the same source paragraph and carry join_before=" ".
-                    sentence_chunks = self._chunk_units(sentences, separator=" ")
+                # Split the oversized unit: on single newlines first when it
+                # has several lines (one-paragraph-per-line files), otherwise
+                # into sentences. Sub-chunks carry the inner separator as
+                # join_before, so reassembly restores line breaks for the
+                # former and keeps the paragraph whole for the latter.
+                lines = self.split_paragraph_into_lines(unit)
+                if len(lines) > 1:
+                    sub_units, sub_separator = lines, "\n"
+                else:
+                    sub_units, sub_separator = self.split_paragraph_into_sentences(unit), " "
+                if len(sub_units) > 1:
+                    sentence_chunks = self._chunk_units(sub_units, separator=sub_separator)
 
                     # Prepend small prefix to first sentence chunk if exists
                     if prefix_units and sentence_chunks:
@@ -265,15 +312,13 @@ class TokenChunker:
 
             # Context before: last part of previous chunk
             if i > 0:
-                prev_paragraphs = self.split_into_paragraphs(raw_chunks[i - 1]["text"])
-                context_before = prev_paragraphs[-1] if prev_paragraphs else ""
+                context_before = self._edge_context(raw_chunks[i - 1]["text"], last=True)
             else:
                 context_before = ""
 
             # Context after: first part of next chunk
             if i < len(raw_chunks) - 1:
-                next_paragraphs = self.split_into_paragraphs(raw_chunks[i + 1]["text"])
-                context_after = next_paragraphs[0] if next_paragraphs else ""
+                context_after = self._edge_context(raw_chunks[i + 1]["text"], last=False)
             else:
                 context_after = ""
 

@@ -24,7 +24,7 @@ from .context_optimizer import (
 )
 from .progress_tracker import TokenProgressTracker
 from .chunking.token_chunker import TokenChunker
-from typing import List, Dict, Tuple, Optional
+from typing import Callable, List, Dict, Tuple, Optional
 
 
 # Configuration for context overflow recovery
@@ -202,6 +202,7 @@ async def _make_llm_request_with_adaptive_context(
     context_manager: AdaptiveContextManager = None,
     placeholder_format: Optional[Tuple[str, str]] = None,
     runtime_state: Optional[dict] = None,
+    raw_response_callback: Optional[Callable[[LLMResponse], None]] = None,
 ) -> Tuple[Optional[str], str, Optional[LLMResponse]]:
     """
     Make LLM request with adaptive context sizing.
@@ -224,6 +225,9 @@ async def _make_llm_request_with_adaptive_context(
         has_placeholders: If True, includes placeholder preservation instructions (for EPUB HTML tags)
         prompt_options: Optional dict with prompt customization options
         context_manager: AdaptiveContextManager for context sizing
+        raw_response_callback: Optional callable receiving every LLMResponse
+            as it arrives, before extraction or any retry decision. Errors it
+            raises are swallowed: recording must never break a translation.
 
     Returns:
         Tuple of (translated_text or None, actual_content_translated, LLMResponse)
@@ -290,6 +294,14 @@ async def _make_llm_request_with_adaptive_context(
             last_response = llm_response
             full_raw_response = llm_response.content
 
+            if raw_response_callback:
+                try:
+                    raw_response_callback(llm_response)
+                except Exception as record_error:
+                    if log_callback:
+                        log_callback("raw_response_record_failed",
+                            f"Could not record raw LLM response: {record_error}")
+
             if not full_raw_response or not full_raw_response.strip():
                 # Empty/null content: the model returned nothing. This is almost
                 # always a refusal or a provider-side moderation/policy block on
@@ -327,6 +339,18 @@ async def _make_llm_request_with_adaptive_context(
                     }
                 })
 
+            # The provider says the model ran out of output tokens: whatever it
+            # returned is only the beginning of the chunk. Saving it would drop
+            # the rest of the chunk from the book without any visible error.
+            if getattr(llm_response, "output_truncated", False) is True:
+                if log_callback:
+                    log_callback("output_truncated",
+                        f"⚠️ The model hit its output token limit before finishing this chunk "
+                        f"(finish_reason: {llm_response.finish_reason}). The chunk is marked "
+                        f"failed instead of being saved half-translated. If this keeps "
+                        f"happening, lower the chunk size or disable reasoning for this model.")
+                return None, main_content, last_response
+
             # Extract translation
             translated_text = client.extract_translation(full_raw_response)
 
@@ -349,6 +373,14 @@ async def _make_llm_request_with_adaptive_context(
                                 "🔄 Model stopped before closing tag. Retrying with larger context...")
                         context_manager.increase_context()
                         continue  # Retry with larger context
+
+                    # The answer was cut off mid-translation. The raw fallback
+                    # below would save it, opening tag included, as if complete.
+                    if log_callback:
+                        log_callback("unclosed_translation_tag",
+                            "⚠️ Response opened the translation tag but never closed it: "
+                            "the output was cut off. Chunk marked failed.")
+                    return None, main_content, last_response
 
                 # For EPUB with placeholders, failing to extract is CRITICAL
                 # because using the raw response would include <TRANSLATION> tags in the HTML
@@ -467,7 +499,8 @@ async def generate_translation_request(main_content, context_before, context_aft
                                        source_language="English", target_language="Chinese", model=DEFAULT_MODEL,
                                        llm_client=None, log_callback=None, has_placeholders=False,
                                        prompt_options=None, context_manager: AdaptiveContextManager = None,
-                                       placeholder_format: Optional[Tuple[str, str]] = None):
+                                       placeholder_format: Optional[Tuple[str, str]] = None,
+                                       raw_response_callback: Optional[Callable[[LLMResponse], None]] = None):
     """
     Generate translation request to LLM API with automatic context overflow handling.
 
@@ -486,6 +519,8 @@ async def generate_translation_request(main_content, context_before, context_aft
         context_manager (AdaptiveContextManager): Optional context manager for adaptive retry on overflow
         placeholder_format (Tuple[str, str]): Optional tuple of (prefix, suffix) for placeholders.
             e.g., ('[', ']') for [0] format or ('[[', ']]') for [[0]] format
+        raw_response_callback (callable): Optional callable receiving every raw
+            LLMResponse (see _make_llm_request_with_adaptive_context)
 
     Returns:
         str: Translated text or None if failed
@@ -510,7 +545,8 @@ async def generate_translation_request(main_content, context_before, context_aft
         has_placeholders=has_placeholders,
         prompt_options=prompt_options,
         context_manager=context_manager,
-        placeholder_format=placeholder_format
+        placeholder_format=placeholder_format,
+        raw_response_callback=raw_response_callback,
     )
 
     if translated_text:

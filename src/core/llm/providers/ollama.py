@@ -11,7 +11,7 @@ import json
 import re
 import httpx
 
-from ..base import LLMProvider, LLMResponse
+from ..base import LLMProvider, LLMResponse, is_output_limit_finish
 from ..exceptions import ContextOverflowError, RateLimitError, RepetitionLoopError
 from ..rate_limit_handler import compute_wait_time
 from ..thinking.cache import get_thinking_cache
@@ -304,6 +304,7 @@ class OllamaProvider(LLMProvider):
                 prompt_tokens = 0
                 completion_tokens = 0
                 exceeded_context = False
+                done_reason = None
 
                 # Calculate safe limit for completion tokens
                 # Reserve space for prompt (we'll get actual count from first chunk)
@@ -401,6 +402,7 @@ class OllamaProvider(LLMProvider):
                                 # Get final token counts
                                 prompt_tokens = chunk_data.get("prompt_eval_count", prompt_tokens)
                                 completion_tokens = chunk_data.get("eval_count", completion_tokens)
+                                done_reason = chunk_data.get("done_reason")
                                 break
                     finally:
                         # Ensure the stream is properly closed and all data is consumed
@@ -497,7 +499,9 @@ class OllamaProvider(LLMProvider):
                     completion_tokens=effective_completion_tokens,  # Use effective count (includes thinking estimate)
                     context_used=context_used,
                     context_limit=self.context_window,
-                    was_truncated=was_truncated
+                    was_truncated=was_truncated,
+                    finish_reason=done_reason,
+                    output_truncated=is_output_limit_finish(done_reason)
                 )
 
             except httpx.TimeoutException as e:

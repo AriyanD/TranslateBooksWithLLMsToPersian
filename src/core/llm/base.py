@@ -46,6 +46,19 @@ class LLMResponse:
     context_limit: int = 0  # Context limit that was set for this request
     was_truncated: bool = False  # True if response was truncated due to context limit
     was_fallback: bool = False  # True if raw response was used because tag extraction failed
+    finish_reason: Optional[str] = None  # Stop reason reported by the provider, when it gives one
+    output_truncated: bool = False  # True if the provider says generation hit the output token limit
+
+
+def is_output_limit_finish(finish_reason: Optional[str]) -> bool:
+    """True when a provider stop reason means "ran out of output tokens".
+
+    Covers the OpenAI-compatible "length", Gemini's "MAX_TOKENS" and the
+    "max_tokens" / "max_output_tokens" spellings used by other gateways.
+    """
+    return str(finish_reason or "").strip().lower() in {
+        "length", "max_tokens", "max_output_tokens",
+    }
 
 
 class LLMProvider(ABC):

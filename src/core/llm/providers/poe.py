@@ -22,7 +22,7 @@ from src.config import (
     REQUEST_TIMEOUT, MAX_TRANSLATION_ATTEMPTS, TEMPERATURE,
     POE_DISABLE_THINKING, POE_DISABLE_WEB_SEARCH
 )
-from ..base import LLMProvider, LLMResponse
+from ..base import LLMProvider, LLMResponse, is_output_limit_finish
 from ..exceptions import ContextOverflowError
 from ..rate_limit_handler import handle_rate_limit, is_retryable_http_status
 
@@ -555,6 +555,7 @@ class PoeProvider(LLMProvider):
                     return None
 
                 response_text = result["choices"][0].get("message", {}).get("content", "")
+                finish_reason = result["choices"][0].get("finish_reason")
 
                 # Track token usage
                 usage = result.get("usage", {})
@@ -585,7 +586,9 @@ class PoeProvider(LLMProvider):
                     completion_tokens=completion_tokens,
                     context_used=prompt_tokens + completion_tokens,
                     context_limit=self._get_context_limit(),
-                    was_truncated=False
+                    was_truncated=False,
+                    finish_reason=finish_reason,
+                    output_truncated=is_output_limit_finish(finish_reason)
                 )
 
             except httpx.TimeoutException as e:
