@@ -1,9 +1,9 @@
+
+https://github.com/user-attachments/assets/4afc5f90-18d8-4586-ba73-626ae681ba57
 <div align="center">
   <h1>TBL - Translate Books with LLMs</h1>
 </div>
-
-https://github.com/user-attachments/assets/3fa533d4-e914-4388-941a-805d734e73f3
-
+https://github.com/user-attachments/assets/b09e7335-0821-4627-bb6a-9067de132cfa
 <div align="center">
 
 [![Download Windows](https://img.shields.io/badge/Download-Windows-blue?style=for-the-badge&logo=windows)](https://github.com/hydropix/TranslateBooksWithLLMs/releases/latest/download/TranslateBook-Windows.zip) [![Download macOS Intel](https://img.shields.io/badge/Download-macOS%20Intel-black?style=for-the-badge&logo=apple)](https://github.com/hydropix/TranslateBooksWithLLMs/releases/latest/download/TranslateBook-macOS-Intel.zip) [![Download macOS Apple Silicon](https://img.shields.io/badge/Download-macOS%20M1%2FM2%2FM3%2FM4-black?style=for-the-badge&logo=apple)](https://github.com/hydropix/TranslateBooksWithLLMs/releases/latest/download/TranslateBook-macOS-AppleSilicon.zip)
