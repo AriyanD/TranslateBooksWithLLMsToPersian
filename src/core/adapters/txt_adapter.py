@@ -94,6 +94,48 @@ class TxtAdapter(FormatAdapter):
 
         return units
 
+    def validate_unit_translation(
+        self,
+        unit_id: str,
+        translated_content: str
+    ) -> Optional[str]:
+        """
+        Flag a translation that is far shorter than its source.
+
+        A model handed a long chunk can stop early or skip whole passages
+        while still returning a well-formed answer. Without this check the
+        unit would be saved as complete and the gap would only show up when
+        someone reads the book.
+
+        Returns:
+            None when the length is plausible, otherwise a feedback message.
+        """
+        import src.config as cfg
+        from src.core.chunking.token_chunker import count_tokens
+
+        min_ratio = cfg.MIN_TRANSLATION_LENGTH_RATIO
+        if min_ratio <= 0:
+            return None
+
+        try:
+            chunk_index = int(unit_id.split('_')[1])
+            source = self.chunks[chunk_index]['main_content']
+        except (IndexError, ValueError, KeyError):
+            return None
+
+        source_tokens = count_tokens(source)
+        if source_tokens < cfg.MIN_TOKENS_FOR_LENGTH_CHECK:
+            return None
+
+        translated_tokens = count_tokens(translated_content)
+        if translated_tokens < source_tokens * min_ratio:
+            return (
+                f"the translation has {translated_tokens} tokens for "
+                f"{source_tokens} source tokens, so part of the text was "
+                f"probably skipped"
+            )
+        return None
+
     async def save_unit_translation(
         self,
         unit_id: str,

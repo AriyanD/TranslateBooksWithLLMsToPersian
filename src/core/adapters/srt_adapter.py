@@ -139,6 +139,16 @@ class SrtAdapter(FormatAdapter):
             return f"missing subtitle index markers: {markers}"
         return None
 
+    def get_validation_retry_instructions(self, feedback: str) -> str:
+        """Reinforce the [N] marker contract on retry."""
+        return (
+            f"CRITICAL: Your previous response was structurally "
+            f"incomplete ({feedback}). You MUST reproduce every "
+            f"[N] index marker from the input exactly once, in "
+            f"order, each followed by its translation. Do NOT "
+            f"merge, drop or renumber markers."
+        )
+
     async def save_unit_translation(self, unit_id: str, translated_content: str) -> bool:
         """Extract translations from block and store by global index."""
         try:

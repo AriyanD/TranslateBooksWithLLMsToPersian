@@ -12,6 +12,7 @@ Solutions to common problems with TranslateBookWithLLM.
 - [Performance Issues](#performance-issues)
 - [Thinking Models](#thinking-models)
 - [EPUB Issues](#epub-issues)
+- [TXT Issues](#txt-issues)
 - [SRT Issues](#srt-issues)
 - [Style Preset Issues](#style-preset-issues)
 - [Web Interface Issues](#web-interface-issues)
@@ -263,6 +264,31 @@ Some models (DeepSeek R1, Qwen3, QwQ, etc.) produce internal reasoning within `<
 1. This should work automatically - check if content matches expected patterns
 2. Enable debug mode to see what's being protected
 3. Report issue if valid technical content is being translated
+
+---
+
+## TXT Issues
+
+### "Part of the book is missing from the translation"
+
+**Cause**: A chunk came back shorter than its source. The model hit its output token limit, or skipped or summarized a passage.
+
+**What the app does now**:
+1. Chinese and Japanese text is split on full-width punctuation (`。！？`), and files with one paragraph per line (no blank lines) are split line by line, so no chunk goes past `MAX_TOKENS_PER_CHUNK`
+2. A response the provider marks as stopped at the output limit (`finish_reason: length`) fails the chunk instead of being saved half-translated
+3. A translation with fewer tokens than `MIN_TRANSLATION_LENGTH_RATIO` (default `0.25`) times the source is retried, then the chunk is marked failed. The job ends `partial` and can be resumed
+4. A failed chunk keeps its source text in the output, so a gap is always visible
+
+**Solutions**:
+1. Resume the job to retry the failed chunks
+2. For reasoning models, disable reasoning so it does not use up the output budget
+3. Lower `MAX_TOKENS_PER_CHUNK` if the model often stops early
+
+### "Was this odd word in the model's output?"
+
+Set `SAVE_RAW_LLM_RESPONSES=true` in `.env`. Each raw model response of a TXT or SRT job, before tag extraction, is then appended to `data/raw_responses/<translation_id>.jsonl`, with the chunk index, attempt number, token counts and finish reason. The TXT pipeline writes the extracted text as is, with no post-processing, so a word found in the raw response came from the model.
+
+The per-chunk source and extracted translation are also kept in `data/jobs.db` (`checkpoint_chunks` table).
 
 ---
 

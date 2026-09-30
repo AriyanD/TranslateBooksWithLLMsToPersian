@@ -20,7 +20,7 @@ import json
 from src.config import (
     REQUEST_TIMEOUT, MAX_TRANSLATION_ATTEMPTS, OPENROUTER_DISABLE_THINKING
 )
-from ..base import LLMProvider, LLMResponse
+from ..base import LLMProvider, LLMResponse, is_output_limit_finish
 from ..exceptions import ContextOverflowError
 from ..rate_limit_handler import handle_rate_limit, is_retryable_http_status
 
@@ -388,6 +388,7 @@ class OpenRouterProvider(LLMProvider):
                 # NOTE: a present-but-null "content" makes .get(..., "") return None,
                 # so coalesce with `or ""` to guarantee a string downstream.
                 response_text = result["choices"][0].get("message", {}).get("content") or ""
+                finish_reason = result["choices"][0].get("finish_reason")
 
                 usage = result.get("usage", {})
                 prompt_tokens = usage.get("prompt_tokens", 0)
@@ -440,7 +441,9 @@ class OpenRouterProvider(LLMProvider):
                     completion_tokens=completion_tokens,
                     context_used=prompt_tokens + completion_tokens,
                     context_limit=0,  # OpenRouter manages context internally
-                    was_truncated=False
+                    was_truncated=False,
+                    finish_reason=finish_reason,
+                    output_truncated=is_output_limit_finish(finish_reason)
                 )
 
             except httpx.TimeoutException as e:

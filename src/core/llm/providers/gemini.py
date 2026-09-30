@@ -20,7 +20,7 @@ from src.config import (
     TEMPERATURE,
     GEMINI_SAFETY_THRESHOLD,
 )
-from ..base import LLMProvider, LLMResponse
+from ..base import LLMProvider, LLMResponse, is_output_limit_finish
 from ..exceptions import ContextOverflowError
 from ..rate_limit_handler import handle_rate_limit, is_retryable_http_status
 
@@ -213,6 +213,7 @@ class GeminiProvider(LLMProvider):
                 # Extract text from Gemini response structure
                 response_text = ""
                 was_truncated = False
+                finish_reason = None
                 # When the input prompt itself is blocked, Gemini returns 200
                 # with no candidates and promptFeedback.blockReason populated.
                 # Surface this so the empty response isn't silently treated as
@@ -264,7 +265,9 @@ class GeminiProvider(LLMProvider):
                     completion_tokens=completion_tokens,
                     context_used=prompt_tokens + completion_tokens,
                     context_limit=0,  # Gemini manages context internally
-                    was_truncated=was_truncated
+                    was_truncated=was_truncated,
+                    finish_reason=finish_reason,
+                    output_truncated=is_output_limit_finish(finish_reason)
                 )
 
             except httpx.TimeoutException as e:

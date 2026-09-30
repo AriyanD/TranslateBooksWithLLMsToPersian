@@ -90,6 +90,23 @@ class FormatAdapter(ABC):
         """
         return None
 
+    def get_validation_retry_instructions(self, feedback: str) -> str:
+        """
+        Build the instruction appended to the prompt when a unit is retried
+        after failing validate_unit_translation().
+
+        Args:
+            feedback: The message returned by validate_unit_translation()
+
+        Returns:
+            Instruction text telling the model what to fix
+        """
+        return (
+            f"CRITICAL: Your previous response was incomplete ({feedback}). "
+            f"Translate the ENTIRE text, from its first sentence to its last. "
+            f"Do NOT skip, summarize or shorten any part of it."
+        )
+
     @abstractmethod
     async def save_unit_translation(
         self,

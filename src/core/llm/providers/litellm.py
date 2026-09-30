@@ -22,7 +22,7 @@ from collections.abc import Mapping
 from typing import Optional, Union, List
 
 from src.config import REQUEST_TIMEOUT, MAX_TRANSLATION_ATTEMPTS, TEMPERATURE
-from ..base import LLMProvider, LLMResponse
+from ..base import LLMProvider, LLMResponse, is_output_limit_finish
 from ..exceptions import ContextOverflowError
 from ..rate_limit_handler import handle_rate_limit
 
@@ -165,6 +165,8 @@ class LiteLLMProvider(LLMProvider):
                     context_used=prompt_tokens + completion_tokens,
                     context_limit=0,  # Unknown across providers; not enforced here.
                     was_truncated=False,
+                    finish_reason=getattr(choice, "finish_reason", None),
+                    output_truncated=is_output_limit_finish(getattr(choice, "finish_reason", None)),
                 )
 
             except Exception as e:

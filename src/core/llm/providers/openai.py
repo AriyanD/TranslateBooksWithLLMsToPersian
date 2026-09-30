@@ -10,7 +10,7 @@ import asyncio
 import json
 import httpx
 
-from ..base import LLMProvider, LLMResponse
+from ..base import LLMProvider, LLMResponse, is_output_limit_finish
 from ..exceptions import ContextOverflowError
 from ..rate_limit_handler import handle_rate_limit, is_retryable_http_status
 from ..utils.context_detection import ContextDetector
@@ -131,6 +131,7 @@ class OpenAICompatibleProvider(LLMProvider):
 
                 response_json = response.json()
                 response_text = response_json.get("choices", [{}])[0].get("message", {}).get("content", "")
+                finish_reason = response_json.get("choices", [{}])[0].get("finish_reason")
 
                 # Extract token usage if available
                 usage = response_json.get("usage", {})
@@ -149,7 +150,9 @@ class OpenAICompatibleProvider(LLMProvider):
                     completion_tokens=completion_tokens,
                     context_used=context_used,
                     context_limit=self.context_window,
-                    was_truncated=False  # OpenAI API doesn't provide truncation info
+                    was_truncated=False,  # Context overflow is reported as an error instead
+                    finish_reason=finish_reason,
+                    output_truncated=is_output_limit_finish(finish_reason)
                 )
 
             except httpx.TimeoutException as e:
