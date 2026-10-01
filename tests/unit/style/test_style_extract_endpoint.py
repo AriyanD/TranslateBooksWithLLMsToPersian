@@ -276,11 +276,11 @@ class TestExtractStyleValidation:
         assert "error" in response.get_json()
 
     def test_5_unsupported_extension_is_400(self, client):
-        """5. .pdf upload -> 400 listing the supported extensions."""
-        response = _post_extract(client, files=[_upload(b"%PDF-1.4", "document.pdf")])
+        """5. .odt upload -> 400 listing the supported extensions."""
+        response = _post_extract(client, files=[_upload(b"PK", "document.odt")])
         assert response.status_code == 400
         body = response.get_json()
-        assert ".pdf" in body["error"] or "pdf" in body["error"].lower()
+        assert ".odt" in body["error"] or "odt" in body["error"].lower()
         assert ".txt" in body["error"]
 
     def test_6_six_files_is_400(self, client):

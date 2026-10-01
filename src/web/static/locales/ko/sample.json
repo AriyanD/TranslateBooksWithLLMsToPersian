@@ -3,7 +3,7 @@
   "subtitle": "전체 번역 없이 책의 몇 개 발췌문에 대해 여러 LLM 구성을 나란히 실행하세요.",
 
   "drop_file_title": "샘플링할 책을 드롭하세요",
-  "drop_file_support": "TXT, EPUB, SRT, DOCX 지원",
+  "drop_file_support": "TXT, EPUB, SRT, DOCX, PDF 지원",
   "selected_file": "선택한 책",
   "remove_file": "이 책을 삭제하고 다른 책을 선택",
 

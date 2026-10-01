@@ -133,7 +133,7 @@ jobs:
         ## Usage
 
         - Web UI: http://localhost:5000
-        - Supported formats: .txt, .epub, .srt, .docx, .odt
+        - Supported formats: .txt, .epub, .srt, .docx, .pdf, .odt
         - Output files: TranslateBook_Data/translated_files/
 
         ## Links

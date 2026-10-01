@@ -21,7 +21,7 @@ import { t } from '../i18n/i18n.js';
 let currentGlossaryId = null;
 let nerSelectedFile = null;
 let nerLastCandidates = [];
-const NER_ACCEPTED_EXTS = ['txt', 'srt', 'epub', 'docx'];
+const NER_ACCEPTED_EXTS = ['txt', 'srt', 'epub', 'docx', 'pdf'];
 
 // In-memory cache of the terms for the currently open glossary so we can
 // re-render after sort / filter / bulk operations without round-tripping.

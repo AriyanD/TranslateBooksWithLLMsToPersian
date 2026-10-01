@@ -167,7 +167,7 @@ def extract_source_text(
     Exactly one of `file_path` / `text` is meaningful; `text` wins when both are
     given (it is the inline-TXT case, where no file exists yet). For a path, the
     bytes are read and handed to `document_sampler.extract_full_text`, which
-    dispatches on the extension (.txt/.srt/.epub/.docx) and returns None for
+    dispatches on the extension (.txt/.srt/.epub/.docx/.pdf) and returns None for
     anything else. Any OSError / unsupported extension / empty result yields ''.
     Never raises.
     """

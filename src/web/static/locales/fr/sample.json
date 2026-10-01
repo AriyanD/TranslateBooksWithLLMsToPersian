@@ -3,7 +3,7 @@
   "subtitle": "Comparez côte à côte plusieurs configurations LLM sur quelques extraits de votre livre — sans lancer une traduction complète.",
 
   "drop_file_title": "Déposez un livre à échantillonner",
-  "drop_file_support": "Formats pris en charge : TXT, EPUB, SRT et DOCX",
+  "drop_file_support": "Formats pris en charge : TXT, EPUB, SRT, DOCX et PDF",
   "selected_file": "Livre sélectionné",
   "remove_file": "Supprimer ce livre et en choisir un autre",
 

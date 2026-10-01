@@ -475,9 +475,9 @@
                         <span class="material-symbols-outlined">cloud_upload</span>
                     </div>
                     <h3 data-i18n="translation:drop_files_title">Drop files to translate</h3>
-                    <p data-i18n="translation:drop_files_support">Support for TXT, EPUB, SRT, and DOCX</p>
+                    <p data-i18n="translation:drop_files_support">Support for TXT, EPUB, SRT, DOCX, and PDF</p>
                     <div class="browse-btn" data-i18n="translation:browse_files">Browse Files</div>
-                    <input type="file" id="fileInput" accept=".txt,.epub,.srt,.docx" style="display: none;" onchange="handleFileSelect(event)" multiple>
+                    <input type="file" id="fileInput" accept=".txt,.epub,.srt,.docx,.pdf" style="display: none;" onchange="handleFileSelect(event)" multiple>
                 </div>
 
                 <!-- File Upload Area (Refine, secondary) -->
@@ -855,9 +855,9 @@
                             <span class="material-symbols-outlined">science</span>
                         </div>
                         <h3 data-i18n="sample:drop_file_title">Drop a book to sample</h3>
-                        <p data-i18n="sample:drop_file_support">Support for TXT, EPUB, SRT, and DOCX</p>
+                        <p data-i18n="sample:drop_file_support">Support for TXT, EPUB, SRT, DOCX, and PDF</p>
                         <div class="browse-btn" data-i18n="translation:browse_files">Browse Files</div>
-                        <input type="file" id="sampleFileInput" accept=".txt,.epub,.srt,.docx" style="display: none;">
+                        <input type="file" id="sampleFileInput" accept=".txt,.epub,.srt,.docx,.pdf" style="display: none;">
                     </div>
 
                     <!-- Selected file card (replaces the dropzone visually once a file is picked) -->
@@ -1865,7 +1865,7 @@
                             </div>
                         </div>
 
-                        <input type="file" id="styleExtractFileInput" accept=".txt,.srt,.epub,.docx" multiple style="display: none;">
+                        <input type="file" id="styleExtractFileInput" accept=".txt,.srt,.epub,.docx,.pdf" multiple style="display: none;">
                         <div id="styleExtractDropzone" class="glossary-ner-dropzone">
                             <div class="ner-dropzone-primary">
                                 <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
@@ -1979,9 +1979,9 @@
             <div class="modal-body" id="ner-modal-body">
                 <div id="ner-input-step">
                     <p class="ner-modal-intro" data-i18n-html="glossary:ner_intro">
-                        Pick a source file (TXT, SRT, EPUB, DOCX). The LLM will scan <strong id="ner-budget-label">6000</strong> characters drawn from <strong id="ner-samples-label">10</strong> evenly-spaced excerpts across the document, and propose recurring named entities. You'll review and edit each candidate before it joins the glossary.
+                        Pick a source file (TXT, SRT, EPUB, DOCX, PDF). The LLM will scan <strong id="ner-budget-label">6000</strong> characters drawn from <strong id="ner-samples-label">10</strong> evenly-spaced excerpts across the document, and propose recurring named entities. You'll review and edit each candidate before it joins the glossary.
                     </p>
-                    <input type="file" id="ner-file-input" accept=".txt,.srt,.epub,.docx" style="display: none;">
+                    <input type="file" id="ner-file-input" accept=".txt,.srt,.epub,.docx,.pdf" style="display: none;">
                     <div id="ner-drop-zone" class="glossary-ner-dropzone">
                         <div class="ner-dropzone-primary">
                             <button type="button" class="btn btn-secondary" id="ner-pick-file-btn">
@@ -1990,7 +1990,7 @@
                             </button>
                             <span class="ner-dropzone-or" data-i18n="glossary:ner_or_drop_here">or drop a file here</span>
                         </div>
-                        <div class="ner-dropzone-hint">TXT · SRT · EPUB · DOCX</div>
+                        <div class="ner-dropzone-hint">TXT · SRT · EPUB · DOCX · PDF</div>
                     </div>
                     <div id="ner-file-pill" class="glossary-ner-file-pill hidden">
                         <span class="material-symbols-outlined" aria-hidden="true">description</span>

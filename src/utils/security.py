@@ -153,7 +153,7 @@ class SecureFileHandler:
     # The system will detect the actual content type for unknown extensions
     ALLOWED_EXTENSIONS: Set[str] = {
         # Primary supported formats (with dedicated processors)
-        '.txt', '.epub', '.srt', '.docx',
+        '.txt', '.epub', '.srt', '.docx', '.pdf',
         # Common text file extensions (will be processed as plain text)
         '.text', '.log', '.md', '.markdown', '.rst', '.asc',
         # Configuration/data files (text-based, can be translated)
@@ -184,6 +184,7 @@ class SecureFileHandler:
         'application/x-subrip',  # SRT files
         'text/srt',  # Alternative MIME type for SRT
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # DOCX files
+        'application/pdf',  # PDF files
         # Additional text MIME types
         'text/markdown',
         'text/x-markdown',
@@ -401,6 +402,7 @@ class SecureFileHandler:
                 '.epub': self._validate_epub_file,
                 '.srt': self._validate_srt_file,
                 '.docx': self._validate_docx_file,
+                '.pdf': self._validate_pdf_file,
             }
 
             # Check if we have a dedicated validator for this extension
@@ -419,6 +421,8 @@ class SecureFileHandler:
                 return self._validate_epub_file(file_path)
             elif detected_type == 'docx':
                 return self._validate_docx_file(file_path)
+            elif detected_type == 'pdf':
+                return self._validate_pdf_file(file_path)
             elif detected_type == 'srt':
                 return self._validate_srt_file(file_path)
             elif detected_type == 'txt':
@@ -687,6 +691,91 @@ class SecureFileHandler:
                 is_valid=False,
                 error_message=f"DOCX validation failed: {str(e)}"
             )
+
+    def _validate_pdf_file(self, file_path: Path) -> FileValidationResult:
+        """
+        Validate PDF file structure.
+
+        The file is untrusted and parsed by a native library (PyMuPDF), so every
+        PyMuPDF call is contained here: no exception escapes, and the document
+        is always closed before returning (the caller renames or deletes the
+        file afterwards, which fails on Windows while a handle is still open).
+        """
+        warnings = []
+        doc = None
+
+        try:
+            # Check the PDF header (the spec tolerates junk bytes before it)
+            with open(file_path, 'rb') as f:
+                header = f.read(1024)
+            if b'%PDF-' not in header:
+                return FileValidationResult(
+                    is_valid=False,
+                    error_message="File is not a valid PDF (missing %PDF header)"
+                )
+
+            try:
+                import pymupdf
+            except ImportError:
+                return FileValidationResult(
+                    is_valid=False,
+                    error_message="PDF support is not installed (missing pymupdf)"
+                )
+
+            # Force the PDF parser: the file on disk carries a temporary suffix,
+            # and no other MuPDF document handler must ever see it.
+            try:
+                doc = pymupdf.open(str(file_path), filetype="pdf")
+            except Exception as e:
+                return FileValidationResult(
+                    is_valid=False,
+                    error_message=f"PDF validation failed: {str(e)}"
+                )
+
+            if doc.needs_pass:
+                return FileValidationResult(
+                    is_valid=False,
+                    error_message="Password-protected PDFs are not supported. Remove the password and try again."
+                )
+
+            page_count = doc.page_count
+            if page_count == 0:
+                return FileValidationResult(
+                    is_valid=False,
+                    error_message="The PDF has no pages."
+                )
+            if page_count > 5000:
+                return FileValidationResult(
+                    is_valid=False,
+                    error_message="PDF has too many pages (max 5000)."
+                )
+
+            # Probe the text layer on the first pages: a scanned document is
+            # accepted, but the user is warned that translation will fail.
+            pages_probed = min(10, page_count)
+            text_chars = sum(
+                len(doc[page_index].get_text().strip())
+                for page_index in range(pages_probed)
+            )
+            if text_chars < 20 * pages_probed:
+                warnings.append(
+                    "This PDF seems to contain no text layer (scanned document?). "
+                    "Translation will fail: OCR is not supported."
+                )
+
+            return FileValidationResult(is_valid=True, warnings=warnings)
+
+        except Exception as e:
+            return FileValidationResult(
+                is_valid=False,
+                error_message=f"PDF validation failed: {str(e)}"
+            )
+        finally:
+            if doc is not None:
+                try:
+                    doc.close()
+                except Exception as e:
+                    logger.warning(f"Failed to close PDF during validation: {str(e)}")
 
     def _cleanup_temp_file(self, temp_path: Path) -> None:
         """

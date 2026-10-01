@@ -3,7 +3,7 @@
   "subtitle": "在书籍的几段摘录上并排运行多个 LLM 配置——无需完整翻译。",
 
   "drop_file_title": "拖入一本书进行采样",
-  "drop_file_support": "支持 TXT、EPUB、SRT 和 DOCX",
+  "drop_file_support": "支持 TXT、EPUB、SRT、DOCX 和 PDF",
   "selected_file": "已选书籍",
   "remove_file": "移除此书并选择另一本",
 

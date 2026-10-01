@@ -84,7 +84,7 @@ def test_idempotent_no_randomness():
 
 def test_unsupported_extension_returns_none_zero_zero():
     joined, count, full_len = extract_samples_from_upload(
-        b"whatever bytes", "notes.pdf", max_chars=6000, num_samples=1
+        b"whatever bytes", "notes.odt", max_chars=6000, num_samples=1
     )
     assert (joined, count, full_len) == (None, 0, 0)
 

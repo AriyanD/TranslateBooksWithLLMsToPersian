@@ -819,7 +819,13 @@ async def perform_actual_translation(translation_id, config, state_manager, outp
                 and not state_manager.get_translation_field(translation_id, 'interrupted')
                 and state_manager.get_translation_field(translation_id, 'status')
                     not in ('error', 'partial', 'rate_limited')
+                and config.get('file_type') != 'pdf'
             )
+            if config.get('refine_after') and config.get('file_type') == 'pdf':
+                _log_message_callback(
+                    "refine_after_unsupported_pdf",
+                    "ℹ️ Refinement is not available for PDF files yet; the translated PDF is kept as is."
+                )
             if should_refine_after:
                 # Phase 2. No manual counter reset is needed: the refine-phase
                 # callback always tags emits as phase 2 with the refine engine's

@@ -153,6 +153,25 @@ class LanguageDetector:
             return ""
 
     @staticmethod
+    def _extract_text_from_pdf(file_data: bytes) -> str:
+        """
+        Extract readable text from PDF file
+
+        Args:
+            file_data: Raw PDF file bytes
+
+        Returns:
+            Extracted text content, or "" if the PDF has no usable text layer
+            (the package wrapper never raises, even without PyMuPDF installed)
+        """
+        try:
+            from src.core.pdf import extract_pdf_text
+
+            return extract_pdf_text(file_data, hard_cap=20000)
+        except Exception:
+            return ""
+
+    @staticmethod
     def _clean_text_for_detection(text: str) -> str:
         """
         Clean text to improve detection accuracy
@@ -202,6 +221,8 @@ class LanguageDetector:
                 text = LanguageDetector._extract_text_from_epub(file_data)
             elif filename_lower.endswith('.srt'):
                 text = LanguageDetector._extract_text_from_srt(file_data)
+            elif filename_lower.endswith('.pdf'):
+                text = LanguageDetector._extract_text_from_pdf(file_data)
             else:
                 # Plain text file
                 # Try common encodings

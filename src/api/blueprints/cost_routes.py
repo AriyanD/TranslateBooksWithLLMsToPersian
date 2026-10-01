@@ -205,6 +205,9 @@ def _extract_text_for_estimation(file_path: Path) -> str:
     if suffix == '.docx':
         return _extract_docx_text(file_path)
 
+    if suffix == '.pdf':
+        return _extract_pdf_text(file_path)
+
     try:
         return file_path.read_text(encoding='utf-8', errors='replace')
     except OSError:
@@ -246,3 +249,13 @@ def _extract_docx_text(file_path: Path) -> str:
     except Exception as e:
         logger.warning("Failed to extract DOCX text from %s: %s", file_path, e)
         return ''
+
+
+def _extract_pdf_text(file_path: Path) -> str:
+    """Extract the text layer from a PDF (empty string when unreadable or scanned)."""
+    from src.core.pdf import extract_pdf_text
+
+    text = extract_pdf_text(str(file_path))
+    if not text:
+        logger.warning("No extractable text in PDF %s", file_path)
+    return text
