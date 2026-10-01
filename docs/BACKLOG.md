@@ -581,7 +581,7 @@ source.
 
 Ordered by demand signal against effort. None of these should start before Sprint 2 is done.
 
-### [ ] 5.1 — PDF support (#140, #234, discussion #191)
+### [x] 5.1 — PDF support (#140, #234, discussion #191)
 
 Highest cumulative demand: three distinct reporters across two duplicate issues plus a discussion. No PDF
 handling exists anywhere in `src/`.
@@ -595,6 +595,21 @@ reassembly flagged as the genuinely hard parts.
 "will you support PDF" question stops being answered three times. Note that discussion #191 currently
 answers it as "pre-convert with pdf-craft", which stays a valid interim answer.
 **Effort.** L.
+
+**Shipped.** Text PDFs are accepted as input and produce a PDF, per
+`blueprint/BLUEPRINT_PdfSupport.md`. `src/core/pdf/extractor.py` reads the text layer with PyMuPDF
+(the only new dependency) and reassembles paragraphs across lines, blocks and pages: hyphenation is
+undone, running headers, footers and page numbers are dropped, and headings, list items and images are
+kept as coarse styles. The paragraphs go through the existing plain-text pipeline
+(`translate_paragraphs_plain`) and its segment checkpoint, reusing the DOCX Plain Text Mode contract
+with no schema change, so an interrupted job resumes at the first unattempted segment.
+`src/core/pdf/builder.py` then writes a new, reflowed PDF on pages of the original size; the original
+layout is not preserved. A follow-up (track A) also rebuilds ruled tables as tables and keeps paragraph colours,
+background boxes and the font family (serif, sans-serif, monospace), per `blueprint/BLUEPRINT_PdfFormattingA.md`.
+`src/core/pdf/translator.py::translate_pdf_file` is routed from
+`translate_file()` for both the web app and the CLI. Out of scope: scanned PDFs (no OCR, they are
+rejected with a clear error), faithful multi-column layouts (best effort), and refinement
+(`--refine` is ignored with a warning, `--refine-only` and the web refine-after pass are skipped for PDF).
 
 ---
 
@@ -718,6 +733,17 @@ Key rotation on 429 shipped (comma-separated `*_API_KEY`, `docs/API_KEY_ROTATION
 half is the cascade suggested by `virdb`: fall back Gemini to OpenAI to Ollama when a whole provider is
 exhausted. Split it into its own issue so the shipped part stops being confused with the pending part.
 **Effort.** M.
+
+---
+
+### [ ] 5.11 — PDF layout-preserving mode (track B)
+
+Item 5.1 rebuilds a new, reflowed PDF, and track A improved its fidelity with tables, colours, boxes and
+font families, but the page layout is still regenerated rather than kept. Track B would translate the text
+in place on the original pages, keeping positions, columns, graphics and fonts. It needs text-fitting rules
+for translations that are longer or shorter than the source, and a policy for text that does not fit. It is
+a different rendering strategy rather than an extension of the reflow builder, and out of scope of track A.
+**Effort.** L.
 
 ---
 
