@@ -146,6 +146,7 @@ export const FileManager = {
         const fileIconClass = file.file_type === 'epub' ? 'book' :
                         file.file_type === 'srt' ? 'movie' :
                         file.file_type === 'txt' ? 'description' :
+                        file.file_type === 'pdf' ? 'picture_as_pdf' :
                         isAudioFile ? 'headphones' : 'attach_file';
 
         const supportsTTS = ['epub', 'txt', 'srt'].includes(file.file_type);

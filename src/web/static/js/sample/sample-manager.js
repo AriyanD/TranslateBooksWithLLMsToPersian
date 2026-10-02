@@ -740,6 +740,7 @@ function iconForFileType(ft) {
     if (ext === 'epub') return 'menu_book';
     if (ext === 'srt')  return 'closed_caption';
     if (ext === 'docx') return 'description';
+    if (ext === 'pdf')  return 'picture_as_pdf';
     if (ext === 'txt')  return 'article';
     return 'description';
 }

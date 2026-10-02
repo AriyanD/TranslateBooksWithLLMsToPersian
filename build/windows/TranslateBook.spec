@@ -55,6 +55,7 @@ a = Analysis(
         'jinja2',
         'langdetect',
         'PIL',
+        'pymupdf',
         'dns',
         'dns.resolver',
     ],

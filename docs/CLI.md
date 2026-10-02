@@ -18,7 +18,7 @@ python translate.py -i input_file -o output_file
 
 | Option | Description |
 |--------|-------------|
-| `-i, --input` | Input file (.txt, .epub, .srt, .docx) |
+| `-i, --input` | Input file (.txt, .epub, .srt, .docx, .pdf) |
 
 ### Output
 
@@ -104,9 +104,14 @@ python translate.py -i novel.epub -tl French
 # DOCX (auto-generates "report (French).docx")
 python translate.py -i report.docx -tl French
 
+# PDF (auto-generates "paper (French).pdf")
+python translate.py -i paper.pdf -tl French
+
 # Custom output filename
 python translate.py -i book.txt -o my_custom_name.txt -tl French
 ```
+
+PDF input must be a text PDF (scanned PDFs are rejected, there is no OCR). The output is a new, reflowed PDF that keeps headings, paragraphs, lists and images, rebuilds ruled tables as tables, and preserves paragraph colours, background boxes and the font family (serif, sans-serif, monospace), but not the original page layout or bold and colour inside a sentence; multi-column layouts are best effort. Refinement is not available for PDF yet: `--refine` is ignored with a warning and `--refine-only` exits with an error.
 
 ### With Different Providers
 

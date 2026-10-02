@@ -3,7 +3,7 @@
   "subtitle": "Compara varias configuraciones de LLM en paralelo sobre algunos extractos de tu libro — sin necesidad de una traducción completa.",
 
   "drop_file_title": "Suelta un libro para muestrear",
-  "drop_file_support": "Compatible con TXT, EPUB, SRT y DOCX",
+  "drop_file_support": "Compatible con TXT, EPUB, SRT, DOCX y PDF",
   "selected_file": "Libro seleccionado",
   "remove_file": "Eliminar este libro y elegir otro",
 

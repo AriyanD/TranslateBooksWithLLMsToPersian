@@ -1,6 +1,6 @@
 """Shared document text extraction and distributed sampling.
 
-Pulls readable text out of uploaded documents (plain text, EPUB, DOCX) and
+Pulls readable text out of uploaded documents (plain text, EPUB, DOCX, PDF) and
 carves it into a bounded number of representative excerpts. Originally lived
 in the glossary NER upload path; extracted here so other features (e.g.
 style extraction) can reuse the same extraction/sampling logic.
@@ -17,7 +17,7 @@ from pathlib import Path
 from lxml import etree
 
 TEXT_EXTS: frozenset[str] = frozenset({'.txt', '.srt'})
-RICH_EXTS: frozenset[str] = frozenset({'.epub', '.docx'})
+RICH_EXTS: frozenset[str] = frozenset({'.epub', '.docx', '.pdf'})
 SUPPORTED_EXTS: frozenset[str] = TEXT_EXTS | RICH_EXTS
 
 # Hard cap on text we pull from a single upload before sampling.
@@ -141,6 +141,17 @@ def _extract_docx_full_text(file_data: bytes, hard_cap: int) -> str | None:
     return '\n\n'.join(parts)[:hard_cap]
 
 
+def _extract_pdf_full_text(file_data: bytes, hard_cap: int) -> str | None:
+    """Pull the text layer from a PDF up to ``hard_cap`` characters.
+
+    Returns None when the PDF has no usable text (e.g. a scanned document) or
+    cannot be read. ``extract_pdf_text`` never raises.
+    """
+    from src.core.pdf import extract_pdf_text
+
+    return extract_pdf_text(file_data, hard_cap=hard_cap) or None
+
+
 def extract_full_text(file_data: bytes, filename: str, hard_cap: int = FULL_TEXT_CAP) -> str | None:
     """Extract the full readable text from an uploaded file (capped)."""
     if not filename or hard_cap <= 0:
@@ -152,6 +163,8 @@ def extract_full_text(file_data: bytes, filename: str, hard_cap: int = FULL_TEXT
         return _extract_epub_full_text(file_data, hard_cap)
     if ext == '.docx':
         return _extract_docx_full_text(file_data, hard_cap)
+    if ext == '.pdf':
+        return _extract_pdf_full_text(file_data, hard_cap)
     return None
 
 

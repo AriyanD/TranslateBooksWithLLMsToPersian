@@ -79,7 +79,8 @@ def _extract_plain_text(file_path: str, file_type: str) -> str:
     Extract the textual content of a file for chunking + sampling.
 
     For TXT we read directly. For EPUB/DOCX we reuse the plain extractors used
-    by Plain Text Mode in the main translate flow. SRT is handled by the
+    by Plain Text Mode in the main translate flow, and for PDF the shared
+    text-layer extractor. SRT is handled by the
     caller (sampled at the cue-group level, not via this helper).
     """
     ft = file_type.lower()
@@ -90,6 +91,8 @@ def _extract_plain_text(file_path: str, file_type: str) -> str:
         return _extract_epub_text(file_path)
     if ft == "docx":
         return _extract_docx_text(file_path)
+    if ft == "pdf":
+        return _extract_pdf_text(file_path)
     raise ValueError(f"Unsupported file type for sampling: {file_type}")
 
 
@@ -144,13 +147,20 @@ def _extract_docx_text(file_path: str) -> str:
     return "\n\n".join(parts)
 
 
+def _extract_pdf_text(file_path: str) -> str:
+    """Return the PDF's text layer ('' when unreadable or scanned)."""
+    from src.core.pdf import extract_pdf_text
+
+    return extract_pdf_text(file_path)
+
+
 def _load_source_units(file_path: str, file_type: str) -> List[Dict[str, str]]:
     """
     Return a normalized list of "source units" for sampling.
 
     Every unit is a dict with `main_content` / `context_before` / `context_after`
-    so the same item-construction code can serve TXT/EPUB/DOCX/SRT files.
-    For TXT/EPUB/DOCX this is just `split_text_into_chunks`; for SRT we group
+    so the same item-construction code can serve TXT/EPUB/DOCX/PDF/SRT files.
+    For TXT/EPUB/DOCX/PDF this is just `split_text_into_chunks`; for SRT we group
     cues into blocks of SRT_LINES_PER_BLOCK and synthesize the contexts from
     adjacent blocks.
 

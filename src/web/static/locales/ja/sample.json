@@ -3,7 +3,7 @@
   "subtitle": "本のいくつかの抜粋に対して複数の LLM 構成を並べて実行できます — 完全な翻訳は不要です。",
 
   "drop_file_title": "サンプリングする本をドロップ",
-  "drop_file_support": "TXT、EPUB、SRT、DOCX に対応",
+  "drop_file_support": "TXT、EPUB、SRT、DOCX、PDF に対応",
   "selected_file": "選択中の本",
   "remove_file": "この本を削除して別の本を選択",
 

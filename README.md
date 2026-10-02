@@ -12,13 +12,14 @@ https://github.com/user-attachments/assets/b09e7335-0821-4627-bb6a-9067de132cfa
 
 A desktop app that translates **books**, **subtitles**, and **documents** with AI - local or cloud. Drop a file, pick a language, get the result.
 
-**Formats:** EPUB, SRT, DOCX, TXT
+**Formats:** EPUB, SRT, DOCX, PDF, TXT
 
 - **No size limit.** Process documents of any length - from a single page to thousand-page novels. The intelligent chunking system handles unlimited content while preserving context between segments.
 - **Perfect preservation.** Your documents come out exactly as they went in: EPUB formatting, styles, and structure remain intact. SRT timecodes stay perfectly synchronized. Every tag, every timestamp, every formatting detail is preserved.
 - **Resume anytime.** Interrupted translation? Pick up exactly where you left off. The checkpoint system saves progress automatically.
 - **Reusable writing styles.** Extract a style preset from sample books (or write one by hand) and apply it to every chunk for a consistent register, rhythm, and imagery across the whole translation.
 - **Auto glossary & style.** No glossary or preset ready? Pick Auto in the dropdown and the app derives both straight from the document being translated - one extra LLM call each before the job starts, nothing saved.
+- **PDF support.** Text PDFs are translated into a new, reflowed PDF: headings, paragraphs, lists and images are kept, ruled tables are rebuilt as tables, and paragraph colours, background boxes and the font family (serif, sans-serif, monospace) are preserved, but the original page layout is not, and bold or colour inside a sentence is not. Scanned PDFs are not supported (no OCR), multi-column layouts are best effort, and the refinement pass is not available for PDF yet.
 
 <img width="1150" height="579" alt="image" src="https://github.com/user-attachments/assets/d7dfa806-830b-4405-8300-f10208943d22" />
 

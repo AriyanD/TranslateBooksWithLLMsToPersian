@@ -1,7 +1,7 @@
 ---
 name: translate-books-with-llms
 description: >-
-  Translate a full-length book, document, or subtitle file (EPUB, DOCX, SRT, or
+  Translate a full-length book, document, or subtitle file (EPUB, DOCX, PDF, SRT, or
   TXT) into another language by running the official TranslateBooksWithLLMs CLI
   (translate.py). Preserves chapter structure, inline formatting, and SRT
   timecodes; supports local (Ollama) or cloud LLM providers, per-book
@@ -26,7 +26,7 @@ command line.
 
 ## When to use this skill
 
-Use it when the user provides an EPUB, DOCX, SRT, or TXT file and a target
+Use it when the user provides an EPUB, DOCX, PDF, SRT, or TXT file and a target
 language and wants the **entire file** translated, with formatting preserved.
 
 Do not use it for translating a single short passage that fits in a chat reply,
@@ -51,7 +51,7 @@ All commands below are run from the repository root, inside this virtualenv.
 
 ## 2. Gather the inputs you need from the user
 
-1. **Source file** — path to the EPUB / DOCX / SRT / TXT to translate.
+1. **Source file** — path to the EPUB / DOCX / PDF / SRT / TXT to translate.
 2. **Languages** — source and target (e.g. English to French). Defaults are
    source `English`, target `Chinese`; always confirm the target.
 3. **Provider** — pick based on the user's hardware and privacy needs:
@@ -138,6 +138,10 @@ format.
 
 Give the user the path to the translated file. It is the same format as the
 input, with chapter structure, inline formatting, and SRT timecodes preserved.
+A PDF is the exception: it must be a text PDF (no OCR), and the result is a new,
+reflowed PDF (headings, lists, images, ruled tables, paragraph colours,
+background boxes and font families are kept; the original page layout is not).
+`--refine` is not available for PDF.
 
 ## Guardrails
 

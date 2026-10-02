@@ -67,7 +67,7 @@ Goal: build your first glossary, run a translation that uses it, all from the We
    ```
 2. **Click the "Glossaries" tab** in the header.
 3. **Click "New"**, give it a name like `My novel` and pick the source/target languages (e.g. Chinese -> English).
-4. **Drag your source file onto the "Auto-extract" button** (or click it and pick a file). Accepted: `.txt`, `.srt`, `.epub`, `.docx`. Up to 100 MB.
+4. **Drag your source file onto the "Auto-extract" button** (or click it and pick a file). Accepted: `.txt`, `.srt`, `.epub`, `.docx`, `.pdf` (text PDFs only). Up to 100 MB.
 5. Leave **Total chars: 6000** and **Samples: 10** (good defaults). Click **Extract**.
 6. After 30-90 seconds (depending on the model), you get a table of candidates. Each row has a checkbox, the source term as detected, an editable target translation, and a category.
 7. **Review and edit**. Common edits: tweak the target translation, switch a category from `other` to `character`, uncheck rows that are obviously wrong.
@@ -531,7 +531,7 @@ The Web UI's **Auto-extract** button asks the configured LLM to scan a source fi
 
 | Input         | Default | Cap   | Meaning                                                                  |
 | ------------- | ------- | ----- | ------------------------------------------------------------------------ |
-| File          |         | 100MB | `.txt`, `.srt`, `.epub`, `.docx`                                         |
+| File          |         | 100MB | `.txt`, `.srt`, `.epub`, `.docx`, `.pdf`                                 |
 | Total chars   | 6000    | 6000  | How much text the LLM sees, in characters.                               |
 | Samples       | 10      | 50    | Number of evenly-spaced excerpts. `1` means "first N chars".             |
 

@@ -14,6 +14,7 @@ Solutions to common problems with TranslateBookWithLLM.
 - [EPUB Issues](#epub-issues)
 - [TXT Issues](#txt-issues)
 - [SRT Issues](#srt-issues)
+- [PDF Issues](#pdf-issues)
 - [Style Preset Issues](#style-preset-issues)
 - [Web Interface Issues](#web-interface-issues)
 - [Configuration Issues](#configuration-issues)
@@ -314,6 +315,28 @@ The per-chunk source and extracted translation are also kept in `data/jobs.db` (
 
 ---
 
+## PDF Issues
+
+### "This PDF has no extractable text layer"
+
+**Cause**: The PDF is a scan (its pages are images). OCR is not supported.
+
+**Solution**: Run the file through an OCR tool (for example `ocrmypdf`) to add a text layer, then translate the OCR'd PDF.
+
+### "This PDF is password-protected"
+
+**Solution**: Open it with its password, save an unprotected copy, and translate that copy.
+
+### "The translated PDF does not look like the original"
+
+**Cause**: PDF output is a new, reflowed document, not an in-place translation. Headings, paragraphs, lists, images, ruled tables, paragraph colours, background boxes and the font family (serif, sans-serif, monospace) are kept. The original page positions, multi-column layouts, bold or colour inside a sentence, borderless tables and merged table cells are not reproduced.
+
+**Solutions**:
+1. If a table came out as plain paragraphs, it probably has no ruling lines: this is a known limit.
+2. If you need the exact original layout, translate the source document (DOCX, EPUB) instead of its PDF export.
+
+---
+
 ## Style Preset Issues
 
 | Symptom | Cause / fix |
@@ -344,7 +367,7 @@ See [docs/STYLE_EXTRACTION.md](STYLE_EXTRACTION.md) for the full guide.
 **Cause**: File too large or wrong format.
 
 **Solutions**:
-1. Check file format: `.txt`, `.epub`, `.srt`, `.docx`
+1. Check file format: `.txt`, `.epub`, `.srt`, `.docx`, `.pdf`
 2. Check file size limits
 3. Try a smaller file first
 4. Check directory permissions: `data/uploads/` must be writable
@@ -515,6 +538,6 @@ The system uses structured logging with types:
 - Python version
 - LLM provider and model used
 - Error message (full traceback if available)
-- File type (EPUB, TXT, SRT)
+- File type (EPUB, DOCX, PDF, TXT, SRT)
 - Relevant `.env` settings (without API keys)
 - Debug logs if available

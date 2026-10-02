@@ -3,7 +3,7 @@
   "subtitle": "Run multiple LLM configurations side-by-side on a few extracts from your book — no full translation needed.",
 
   "drop_file_title": "Drop a book to sample",
-  "drop_file_support": "Support for TXT, EPUB, SRT, and DOCX",
+  "drop_file_support": "Support for TXT, EPUB, SRT, DOCX, and PDF",
   "selected_file": "Selected book",
   "remove_file": "Remove this book and pick another",
 

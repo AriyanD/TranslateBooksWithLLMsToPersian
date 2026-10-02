@@ -31,7 +31,7 @@ const DIMENSIONS = [
     'imagery', 'dialogue', 'punctuation', 'formatting', 'other',
 ];
 
-const EXTRACT_ACCEPTED_EXTS = ['txt', 'srt', 'epub', 'docx'];
+const EXTRACT_ACCEPTED_EXTS = ['txt', 'srt', 'epub', 'docx', 'pdf'];
 const EXTRACT_MAX_FILES = 5;
 const ASSEMBLE_DEBOUNCE_MS = 300;
 

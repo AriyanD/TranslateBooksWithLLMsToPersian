@@ -218,7 +218,7 @@ The extract-style endpoint (`POST /api/custom-instructions/extract-style`) sampl
 
 | Input | Default | Range / cap | Notes |
 |---|---|---|---|
-| `files` | — | 1-5 files, each ≤ 100 MB | Accepted extensions: `.txt`, `.srt`, `.epub`, `.docx`. |
+| `files` | — | 1-5 files, each ≤ 100 MB | Accepted extensions: `.txt`, `.srt`, `.epub`, `.docx`, `.pdf` (text layer only). |
 | `mode` | `source` | `source` \| `model` | See [The two modes](#the-two-modes). |
 | `max_chars` | `10000` | 1-12000 | Values above 12000 are silently clamped to 12000; `0` or negative is a 400 error. |
 | `sample_count` | `6` | 1-20 | Outside this range → 400 error (not clamped). |

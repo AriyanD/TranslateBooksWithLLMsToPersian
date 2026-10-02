@@ -180,7 +180,7 @@ _HARDCODE_ALLOWLIST: set[tuple[str, str, str]] = {
     ("button", "<text>", "JSON"),
 
     # --- supported-formats hint (file extensions, separator dots) -------
-    ("div", "<text>", "TXT · SRT · EPUB · DOCX"),
+    ("div", "<text>", "TXT · SRT · EPUB · DOCX · PDF"),
 }
 
 

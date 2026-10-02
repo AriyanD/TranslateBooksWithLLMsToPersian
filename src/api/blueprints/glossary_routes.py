@@ -573,7 +573,7 @@ def create_glossary_blueprint(store: Optional[GlossaryStore] = None):
 
         Accepts either:
           - ``application/json`` with ``text`` and the parameters below.
-          - ``multipart/form-data`` with a ``file`` field (txt/srt/epub/docx)
+          - ``multipart/form-data`` with a ``file`` field (txt/srt/epub/docx/pdf)
             plus the parameters as form fields.
 
         Parameters:

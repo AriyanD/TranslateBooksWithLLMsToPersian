@@ -2,10 +2,10 @@
 Unified file translation function using the adapter pattern.
 
 This module provides a single entry point for translating files of any supported
-format (TXT, SRT, EPUB, DOCX) using format-specific adapters.
+format (TXT, SRT, EPUB, DOCX, PDF) using format-specific adapters.
 
 File type detection supports:
-1. Known extensions (.txt, .epub, .srt, .docx)
+1. Known extensions (.txt, .epub, .srt, .docx, .pdf)
 2. Content-based detection for unknown extensions (e.g., .log, .md, .text -> txt)
 3. Automatic routing to appropriate processors
 """
@@ -90,7 +90,7 @@ async def translate_file(
     Translate a file using the adapter pattern.
 
     This is the unified entry point for all file format translations (TXT,
-    SRT, EPUB, DOCX), used by both the web API and the CLI. It supersedes the
+    SRT, EPUB, DOCX, PDF), used by both the web API and the CLI. It supersedes the
     former per-format functions, which have been removed.
 
     Args:
@@ -201,7 +201,7 @@ async def translate_file(
     # The legacy EPUB/DOCX pipelines below save checkpoint chunks without ever
     # creating the parent job row, which only worked because the web handler
     # creates it beforehand. Make the invariant hold on every entry point.
-    if detected_type in ('epub', 'docx'):
+    if detected_type in ('epub', 'docx', 'pdf'):
         _ensure_checkpoint_job(
             checkpoint_manager=checkpoint_manager,
             translation_id=translation_id,
@@ -292,17 +292,57 @@ async def translate_file(
         )
         return result.get('success', False)
 
+    # PDF translation: extractor + plain-text pipeline + reflowed PDF builder.
+    # Same shape as the DOCX branch above; PDF always runs in plain-text mode.
+    if detected_type == 'pdf':
+        from src.core.pdf.translator import translate_pdf_file
+        from src.core.llm import create_llm_provider
+
+        # Create LLM client
+        llm_client = create_llm_provider(
+            provider_type=llm_provider,
+            endpoint=llm_api_endpoint,
+            model=model_name,
+            gemini_api_key=gemini_api_key,
+            openai_api_key=openai_api_key,
+            openrouter_api_key=openrouter_api_key,
+            mistral_api_key=mistral_api_key,
+            deepseek_api_key=deepseek_api_key,
+            poe_api_key=poe_api_key
+        )
+
+        result = await translate_pdf_file(
+            input_filepath=input_filepath,
+            output_filepath=output_filepath,
+            source_language=source_language,
+            target_language=target_language,
+            model_name=model_name,
+            llm_client=llm_client,
+            max_tokens_per_chunk=max_tokens_per_chunk,
+            log_callback=log_callback,
+            stats_callback=stats_callback,
+            prompt_options=prompt_options,
+            max_retries=1,
+            context_manager=None,
+            check_interruption_callback=check_interruption_callback,
+            checkpoint_manager=checkpoint_manager,
+            translation_id=translation_id,
+            parallel_workers=parallel_workers
+        )
+        return result.get('success', False)
+
     # Map detected file types to adapters
     adapter_map = {
         'txt': TxtAdapter,
         'srt': SrtAdapter,
         # Note: 'epub' uses legacy path above
         # Note: 'docx' uses legacy path above
+        # Note: 'pdf' uses dedicated path above
     }
 
     adapter_class = adapter_map.get(detected_type)
     if not adapter_class:
-        supported = ', '.join(['txt', 'srt', 'epub', 'docx'])
+        supported = ', '.join(['txt', 'srt', 'epub', 'docx', 'pdf'])
         raise UnsupportedFormatError(
             f"Unsupported file format: {detected_type}. Supported formats: {supported}"
         )
@@ -366,7 +406,7 @@ def get_file_type_from_path(filepath: str) -> str:
         filepath: Path to the file
 
     Returns:
-        File type string: 'txt', 'srt', 'epub', or 'unknown'
+        File type string: 'txt', 'srt', 'epub', 'docx', 'pdf', or 'unknown'
     """
     _, ext = os.path.splitext(filepath.lower())
 
@@ -375,6 +415,7 @@ def get_file_type_from_path(filepath: str) -> str:
         '.srt': 'srt',
         '.epub': 'epub',
         '.docx': 'docx',
+        '.pdf': 'pdf',
     }
 
     return type_map.get(ext, 'unknown')
@@ -428,6 +469,7 @@ async def build_translated_output(
         'srt': SrtAdapter,
         'epub': EpubAdapter,
         # Note: docx doesn't support checkpoint reconstruction yet
+        # Note: pdf doesn't support checkpoint reconstruction yet
     }
 
     adapter_class = adapter_map.get(file_type)

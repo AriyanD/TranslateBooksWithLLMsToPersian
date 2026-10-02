@@ -221,8 +221,8 @@ class TestExtractSourceText:
         assert auto_prep.extract_source_text(file_path=str(tmp_path / "nope.txt")) == ""
 
     def test_unsupported_extension_returns_empty(self, tmp_path):
-        path = tmp_path / "book.pdf"
-        path.write_bytes(b"%PDF-1.4 fake")
+        path = tmp_path / "book.odt"
+        path.write_bytes(b"PK fake")
         assert auto_prep.extract_source_text(file_path=str(path)) == ""
 
     def test_no_input_returns_empty(self):
