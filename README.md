@@ -2,7 +2,7 @@
 https://github.com/user-attachments/assets/4afc5f90-18d8-4586-ba73-626ae681ba57
 <div align="center">
   <h1>TBL - Translate Books with LLMs</h1>
-  <p>翻译书籍 · 本を翻訳する · 책을 번역하다 · किताबों का अनुवाद · ترجمة الكتب</p>
+  <p>翻译书籍 · 本を翻訳する · 책을 번역하다 · किताबों का अनुवाद · Перевод книг · แปลหนังสือ · Μετάφραση βιβλίων · ترجمة الكتب</p>
 </div>
 https://github.com/user-attachments/assets/b09e7335-0821-4627-bb6a-9067de132cfa
 <div align="center">
@@ -36,7 +36,7 @@ A desktop app that translates **books**, **subtitles**, and **documents** with A
 3. **Run** `TranslateBook.exe` (Windows) or `./TranslateBook` (macOS).
 4. **Open** http://localhost:5000 in your browser.
 
-That's it. On first launch, you choose a translation provider:
+That's it (就这么简单 · これだけ · 이게 다예요). On first launch, you choose a translation provider:
 
 - **Free & local** - Install [Ollama](https://ollama.com/) and pull a model (e.g. `ollama pull qwen3:14b`). Nothing leaves your machine.
 - **Cloud (often free tier available)** - Paste an API key from one of the providers below.
@@ -246,7 +246,7 @@ If TBL saves you time, you can support its development on Ko-fi:
 
 <a href="https://ko-fi.com/Y1M021FYBG" target="_blank"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi" height="36"></a>
 
-Thank you · 谢谢 · ありがとう · 감사합니다 · धन्यवाद · شكرًا
+Thank you · 谢谢 · ありがとう · 감사합니다 · धन्यवाद · Спасибо · ขอบคุณ · Ευχαριστώ · شكرًا
 
 ---
 
