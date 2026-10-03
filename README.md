@@ -2,6 +2,7 @@
 https://github.com/user-attachments/assets/4afc5f90-18d8-4586-ba73-626ae681ba57
 <div align="center">
   <h1>TBL - Translate Books with LLMs</h1>
+  <p>翻译书籍 · 本を翻訳する · 책을 번역하다 · किताबों का अनुवाद · ترجمة الكتب</p>
 </div>
 https://github.com/user-attachments/assets/b09e7335-0821-4627-bb6a-9067de132cfa
 <div align="center">
@@ -244,6 +245,8 @@ Two things stay local to the device: if you queue several files, other devices o
 If TBL saves you time, you can support its development on Ko-fi:
 
 <a href="https://ko-fi.com/Y1M021FYBG" target="_blank"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi" height="36"></a>
+
+Thank you · 谢谢 · ありがとう · 감사합니다 · धन्यवाद · شكرًا
 
 ---
 
