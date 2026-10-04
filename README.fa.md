@@ -1,6 +1,14 @@
 # مترجم کتاب فارسی (Persian Book Translator)
 
+[English](README.md) · **فارسی** · [⬇ دانلود نسخهٔ Standalone](https://github.com/AriyanD/TranslateBooksWithLLMsToPersian/releases/latest)
+
 ترجمهٔ **EPUB، DOCX، PDF، TXT/MD و SRT** (یا **متن چسبانده‌شده**) به **فارسی** با **API های خودتان**؛ همهٔ providerها **هم‌زمان** روی یک کتاب کار می‌کنند. مدل لوکال ندارد؛ با هر سرویسی که فرمت OpenAI (`/chat/completions`) را بفهمد کار می‌کند (Gemini، Groq، OpenRouter، Mistral، NVIDIA NIM، DeepSeek و ...).
+
+## تصاویر محیط برنامه
+
+![صفحهٔ اصلی: providerها، انتخاب فایل و تنظیمات](docs/screenshots/ui-main.png)
+
+![صفحهٔ پیشرفت: زمان باقی‌مانده و متن اصلی کنار ترجمهٔ فارسی (نمونهٔ متن کوتاه)](docs/screenshots/ui-progress.png)
 
 ## اجرا (ساده‌ترین راه)
 1. از بخش **Releases** همین مخزن، فایل zip سیستم‌تان را بگیرید (Windows / macOS / Linux) و از حالت فشرده خارج کنید.
@@ -37,3 +45,4 @@ python translate.py mybook.epub -p providers.json
 
 ## مجوز و منبع
 این پروژه برگرفته از [TranslateBooksWithLLMs](https://github.com/hydropix/TranslateBooksWithLLMs) است و مانند آن تحت **AGPL-3.0** منتشر می‌شود.
+
