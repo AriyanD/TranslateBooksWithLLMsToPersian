@@ -1,4 +1,40 @@
-# Persian Book Translator
+# Persian Book Translator | مترجم کتاب فارسی
+
+**English** · [فارسی (راهنمای کامل)](README.fa.md) · [⬇ Download / دانلود](https://github.com/AriyanD/TranslateBooksWithLLMsToPersian/releases/latest)
+
+<div dir="rtl" align="right">
+
+## معرفی
+
+**مترجم کتاب فارسی** برنامه‌ای است برای ترجمهٔ کتاب و سند به **فارسی** با **API های خودتان**.
+فایل‌های **EPUB، DOCX، PDF، TXT/MD و SRT** (یا حتی متن چسبانده‌شده) را می‌گیرد و همهٔ سرویس‌هایی که وارد کرده‌اید را
+**هم‌زمان** روی یک کتاب به کار می‌گیرد؛ هر سرویس تکهٔ بعدی را برمی‌دارد و در پایان همه‌چیز به ترتیب اصلی در یک فایل
+راست‌به‌چپ (مثلاً `mybook.fa.epub`) کنار هم قرار می‌گیرد. مدل لوکال ندارد و با هر سرویسی که فرمت OpenAI
+(`/chat/completions`) را بفهمد کار می‌کند.
+
+* **بدون نصب پایتون:** نسخهٔ **Standalone** برای Windows، macOS و Linux در بخش [Releases](https://github.com/AriyanD/TranslateBooksWithLLMsToPersian/releases/latest) است؛ دانلود، استخراج و دوبار کلیک.
+* **سورس‌کد کامل** هم همین‌جا (و در Releases به‌صورت Source code) در دسترس است.
+* ادامهٔ خودکار پس از قطعی، جایگزینی خودکار سرویس خراب، چند کلید پشتیبان، حالت **بازبینی ادبی (Refine)** و نمایش زندهٔ «آخرین بخش ترجمه‌شده».
+
+راهنمای کامل به فارسی: [README.fa.md](README.fa.md)
+
+</div>
+
+---
+
+## Screenshots
+
+**Set up your providers, drop a book, press translate:**
+
+![Main screen: providers, file drop zones and settings](docs/screenshots/ui-main.png)
+
+**Live progress with time remaining and the original next to the Persian (screenshot of a short demo text):**
+
+![Progress screen with the last translated part shown side by side](docs/screenshots/ui-progress.png)
+
+---
+
+## English
 
 Translate **EPUB, DOCX, PDF, TXT/MD and SRT** files (or just **pasted text**) into **Persian (فارسی)** using
 **your own API providers**, all working **in parallel**.
@@ -147,4 +183,5 @@ free OpenAI-compatible API providers translating one book in parallel; there is 
 support. It stays under the same **GNU AGPL-3.0** license (see `LICENSE`). If you run a modified
 version as a public web service, AGPL section 13 requires you to offer your users the source code;
 the UI footer links to it.
+
 
