@@ -1,0 +1,28 @@
+{
+  "providers": [
+    {
+      "name": "provider-1",
+      "base_url": "https://YOUR-PROVIDER-1/v1",
+      "api_key": "YOUR_API_KEY_HERE",
+      "model": "MODEL_ID",
+      "concurrency": 1,
+      "use_for": ["translate"]
+    },
+    {
+      "name": "provider-2",
+      "base_url": "https://YOUR-PROVIDER-2/v1",
+      "api_key": "YOUR_API_KEY_HERE",
+      "model": "MODEL_ID",
+      "concurrency": 2,
+      "use_for": ["translate", "review"]
+    },
+    {
+      "name": "provider-3",
+      "base_url": "https://YOUR-PROVIDER-3/v1",
+      "api_key": "YOUR_API_KEY_HERE",
+      "model": "MODEL_ID",
+      "concurrency": 1,
+      "use_for": ["review"]
+    }
+  ]
+}

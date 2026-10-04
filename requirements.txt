@@ -1,0 +1,4 @@
+lxml>=4.9        # EPUB
+python-docx>=1.1 # DOCX (and PDF output)
+pypdf>=4.0        # PDF input
+# Everything else (web UI, HTTP calls, parallel workers) is Python standard library.

@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Persian Book Translator</title>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --line:#2a2f3a; --text:#e7e9ee; --muted:#9aa3b2;
+          --accent:#7c5cff; --ok:#2ecc71; --bad:#ff5c7a; --warn:#f5b041; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width:1100px; margin:0 auto; padding:24px 16px 60px; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:16px; margin:0 0 12px; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:6px 4px; vertical-align:middle; }
+  th { color:var(--muted); font-weight:500; font-size:12px; }
+  input, textarea, select { width:100%; background:#0c0e12; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font:inherit; }
+  input[type=checkbox] { width:auto; }
+  textarea { min-height:60px; resize:vertical; }
+  button { background:#262b36; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:7px 12px; cursor:pointer; font:inherit; white-space:nowrap; }
+  button:hover { border-color:#4a5263; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:white; font-weight:600; }
+  button.danger { color:var(--bad); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:end; }
+  .row > div { flex:1; min-width:160px; }
+  label { display:block; color:var(--muted); font-size:12px; margin-bottom:4px; }
+  .bar { height:10px; background:#0c0e12; border-radius:6px; overflow:hidden; border:1px solid var(--line); }
+  .bar > div { height:100%; width:0; background:linear-gradient(90deg,var(--accent),#28c4ff); transition:width .4s; }
+  .log { background:#0c0e12; border:1px solid var(--line); border-radius:8px; height:240px; overflow:auto; padding:8px; font:12px/1.5 ui-monospace,Consolas,monospace; white-space:pre-wrap; }
+  .pill { display:inline-block; padding:1px 8px; border-radius:20px; font-size:12px; background:#262b36; }
+  .ok { color:var(--ok); } .bad { color:var(--bad); } .warn { color:var(--warn); } .muted { color:var(--muted); }
+  .note { color:var(--muted); font-size:12px; margin-top:8px; }
+  .hidden { display:none; }
+  .tiny { font-size:12px; padding:5px 8px; }
+  td.c { width:70px; } td.act { width:1%; white-space:nowrap; }
+  .fa { direction:rtl; font-family: Vazirmatn, Tahoma, sans-serif; }
+  .stats { display:flex; gap:10px; flex-wrap:wrap; margin:12px 0; }
+  .stat { flex:1; min-width:130px; background:#0c0e12; border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+  .stat b { display:block; font-size:18px; } .stat span { color:var(--muted); font-size:12px; }
+  .banner { border:1px solid var(--warn); background:rgba(245,176,65,.08); color:var(--warn); border-radius:8px; padding:10px 12px; margin:10px 0; }
+  .preview { display:flex; gap:10px; flex-wrap:wrap; }
+  .preview > div { flex:1; min-width:260px; }
+  .pbox { background:#0c0e12; border:1px solid var(--line); border-radius:8px; height:220px; overflow:auto; padding:10px; white-space:pre-wrap; }
+  .pbox.fa { font-size:15px; line-height:1.9; }
+  .pbox .empty { color:var(--muted); font-style:italic; direction:ltr; font-family:system-ui,sans-serif; font-size:13px; }
+  .zones { display:flex; gap:12px; flex-wrap:wrap; }
+  .zone { flex:1; min-width:240px; border:2px dashed var(--line); border-radius:12px; padding:18px 14px; text-align:center; cursor:pointer; transition:.15s; background:#0c0e12; }
+  .zone:hover, .zone.drag { border-color:var(--accent); background:rgba(124,92,255,.07); }
+  .zone.sel { border-style:solid; border-color:var(--accent); background:rgba(124,92,255,.12); }
+  .zone.refine.sel, .zone.refine.drag { border-color:#28c4ff; background:rgba(40,196,255,.08); }
+  .zone h4 { margin:0 0 4px; font-size:15px; } .zone p { margin:0; color:var(--muted); font-size:12px; }
+  .zone .fname { margin-top:8px; font-weight:600; color:var(--text); word-break:break-all; }
+  .zone .ico { font-size:26px; line-height:1; margin-bottom:6px; }
+  .roles { display:flex; gap:4px; }
+  .role { padding:4px 8px; font-size:12px; border-radius:20px; color:var(--muted); background:#0c0e12; }
+  .role .tick { display:inline-block; width:12px; }
+  .role.on.t { background:rgba(124,92,255,.18); border-color:var(--accent); color:var(--text); }
+  .role.on.r { background:rgba(40,196,255,.14); border-color:#28c4ff; color:var(--text); }
+  tr.off-mode td:not(.act):not(.use) { opacity:.45; }
+  .tabs { display:flex; gap:6px; margin-bottom:14px; border-bottom:1px solid var(--line); }
+  .tabs a { padding:8px 14px; color:var(--muted); text-decoration:none; border-bottom:2px solid transparent; margin-bottom:-1px; font-weight:500; }
+  .tabs a.on { color:var(--text); border-bottom-color:var(--accent); }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; background:#0c0e12; color:var(--muted); }
+  .seg button.on { background:var(--accent); color:#fff; }
+  .seg button.on.r { background:#28c4ff; color:#08131a; }
+  .textio { display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; }
+  .textio > div { flex:1; min-width:280px; }
+  .textio textarea { min-height:280px; line-height:1.8; }
+  .textio textarea.fa { font-size:15px; line-height:1.9; }
+  .preview-wrap { margin-top:16px; }
+  .preview-wrap h3 { font-size:14px; margin:0 0 8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Persian Book Translator</h1>
+  <p class="sub">Translate books, documents and subtitles into Persian (فارسی) with your own API providers, all working in parallel.</p>
+
+  <div class="card">
+    <h2>1. Your API providers</h2>
+    <table>
+      <thead><tr><th>On</th><th>Name</th><th>Base URL</th><th>API key</th><th>Model</th><th>Parallel</th><th title="Which job this API works on: translating, reviewing (refine), or both">Use for</th><th></th></tr></thead>
+      <tbody id="providers"></tbody>
+    </table>
+    <datalist id="models-list"></datalist>
+    <div class="row" style="margin-top:10px">
+      <div style="flex:0"><button id="add">+ Add provider</button></div>
+      <div style="flex:0"><button id="export">Export JSON</button></div>
+      <div style="flex:0"><button id="import">Import JSON</button><input type="file" id="importFile" accept=".json" class="hidden"></div>
+      <div style="flex:0"><button id="testAll">Test all</button></div>
+      <div style="flex:0;margin-left:auto"><label>Set all providers to</label>
+        <span class="roles"><button class="tiny" data-all="translate">Translate only</button><button class="tiny" data-all="review">Review only</button><button class="tiny" data-all="both">Both</button></span></div>
+    </div>
+    <p class="note" id="roleSummary" style="margin-top:6px"></p>
+    <p class="note">Any OpenAI-compatible API works. Base URL is the part before <code>/chat/completions</code>, e.g. <code>https://api.example.com/v1</code>.
+      "Parallel" = how many requests that provider handles at once (1 is safe for free tiers). Everything is saved in this browser only.<br>
+      <b>Backup keys:</b> put several keys in one API key box, separated by commas. If a key is rate limited, rejected or runs out of quota/credits, the next key takes over automatically.
+      <b>Use for:</b> click <b>Translate</b> / <b>Review</b> on each provider to choose which job it works on (both lit = both jobs). A translate job only uses providers with Translate on; a review (refine) job only uses providers with Review on. Use the buttons above the table to set every provider at once.<br>
+      You can also add providers or keys <b>while a translation is running</b>: edit this table, then press <b>Add to running job</b> below.</p>
+  </div>
+
+  <div class="card">
+    <h2>2. What to translate &amp; settings</h2>
+    <div class="tabs">
+      <a href="#file" id="tabFile" class="on">📁 File (book, PDF, document)</a>
+      <a href="#text" id="tabText">✍️ Paste text</a>
+    </div>
+    <div id="viewFile">
+    <div class="zones">
+      <div class="zone" id="zoneTranslate" data-mode="translate">
+        <div class="ico">📘</div>
+        <h4>Drop files to translate</h4>
+        <p>Any language → Persian · .epub .docx .pdf .txt .md .srt</p>
+        <div class="fname" id="fnTranslate"></div>
+        <input type="file" id="fileTranslate" accept=".epub,.docx,.pdf,.txt,.md,.srt" class="hidden">
+      </div>
+      <div class="zone refine" id="zoneRefine" data-mode="refine">
+        <div class="ico">✨</div>
+        <h4>Drop files to refine (already translated)</h4>
+        <p>Polish an existing Persian translation: Persian in, better Persian out</p>
+        <div class="fname" id="fnRefine"></div>
+        <input type="file" id="fileRefine" accept=".epub,.docx,.pdf,.txt,.md,.srt" class="hidden">
+      </div>
+    </div>
+    <p class="note">PDF: the text is taken out page by page and the Persian comes back as an RTL <b>.docx</b> (same page breaks), because Persian letters break inside PDFs. Open it in Word / Google Docs and "Save as PDF" if you need a PDF. Scanned PDFs (photos of pages) need OCR first.</p>
+    </div>
+    <div id="viewText" class="hidden">
+      <div class="row" style="align-items:center">
+        <div style="flex:0"><div class="seg"><button id="tmTranslate" class="on">📘 Translate to Persian</button><button id="tmRefine" class="r">✨ Refine Persian</button></div></div>
+        <div><span class="tiny muted" id="textCount">0 characters</span></div>
+      </div>
+      <div class="textio">
+        <div><label id="tSrcLabel">Your text (any language)</label><textarea id="textIn" dir="auto" placeholder="Paste or type the text here…"></textarea></div>
+        <div><label id="tOutLabel">Persian</label><textarea id="textOut" class="fa" dir="rtl" readonly placeholder="ترجمه اینجا نمایش داده می‌شود…"></textarea>
+          <div class="row" style="margin-top:6px"><div style="flex:0"><button class="tiny" id="copyOut">📋 Copy</button></div><div style="flex:0"><button class="tiny" id="saveOut">⬇ Save .txt</button></div><div><span class="tiny muted" id="copyMsg"></span></div></div></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div><label>Characters per request</label><input type="number" id="chunk" value="2500" min="300" max="20000" step="100"></div>
+      <div><label>Max tries per chunk</label><input type="number" id="attempts" value="6" min="1" max="30"></div>
+      <div><label>Temperature</label><input type="number" id="temp" value="0.3" min="0" max="2" step="0.1"></div>
+      <div><label>Timeout (s)</label><input type="number" id="timeout" value="240" min="20"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div style="flex:3"><label>Extra instructions (optional: tone, glossary, how to write names…)</label>
+        <textarea id="instructions" placeholder="e.g. Formal literary tone. Translate 'Gandalf' as 'گندالف'."></textarea></div>
+      <div style="flex:1">
+        <label><input type="checkbox" id="digits"> Persian digits (۱۲۳)</label>
+        <label><input type="checkbox" id="resume" checked> Resume saved progress</label>
+        <label title="If every key is dead or out of quota, pause and wait for you to add a new API instead of stopping."><input type="checkbox" id="waitApi" checked> Pause if all APIs run out</label>
+        <label class="hidden" id="pwWrap">Server password<input type="password" id="password"></label>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div style="flex:0"><button class="primary" id="start">Translate to Persian</button></div>
+      <div style="flex:0"><button id="cancel" disabled>Stop</button></div>
+      <div style="flex:0"><button id="download" class="hidden">Download result</button></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="progressCard">
+    <h2>3. Progress <span class="pill" id="status">-</span></h2>
+    <div class="bar"><div id="bar"></div></div>
+    <div class="stats">
+      <div class="stat"><span>Done</span><b id="sPct">0%</b></div>
+      <div class="stat"><span>Time remaining</span><b id="sEta">calculating…</b></div>
+      <div class="stat"><span>Finishes around</span><b id="sEnd">-</b></div>
+      <div class="stat"><span>Elapsed</span><b id="sElapsed">0s</b></div>
+      <div class="stat"><span>Speed</span><b id="sSpeed">-</b></div>
+    </div>
+    <div class="banner hidden" id="waitBanner"></div>
+    <div class="row" style="margin-bottom:10px">
+      <div style="flex:0"><button id="pushProviders" disabled title="Sends the enabled providers from step 1 to the running job. New names are added as new providers; existing names get any new keys.">+ Add to running job</button></div>
+      <div><span class="tiny muted" id="pushResult"></span></div>
+    </div>
+    <p class="muted" id="summary" style="margin:0 0 12px"></p>
+    <table>
+      <thead><tr><th>Provider</th><th>Model</th><th>Keys OK</th><th>Chunks done</th><th>Errors</th><th>Avg time</th><th>Status</th></tr></thead>
+      <tbody id="pstats"></tbody>
+    </table>
+    <div class="preview-wrap" id="previewCard">
+      <h3><span id="pvTitle">📄 Last translated part</span> <span class="pill muted" id="pvMeta">waiting for the first part…</span>
+        <span style="margin-left:auto"><button class="tiny" id="pvPrev" title="older">◀</button> <button class="tiny" id="pvNext" title="newer">▶</button>
+        <label style="display:inline;margin-left:8px"><input type="checkbox" id="pvFollow" checked> follow latest</label></span></h3>
+      <div class="preview">
+        <div><label id="pvSrcLabel">Original</label><div class="pbox" id="pvSrc" dir="auto"><span class="empty">No translation yet…</span></div></div>
+        <div><label id="pvFaLabel">Persian</label><div class="pbox fa" id="pvFa"><span class="empty">No translation yet…</span></div></div>
+      </div>
+    </div>
+    <label style="margin-top:14px">Activity log</label>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script>
+const LS_KEY = 'pbt.providers.v1', LS_SET = 'pbt.settings.v1';
+const ROLES = ['translate', 'review'];
+const $ = id => document.getElementById(id);
+let providers = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+if (!providers.length) providers = [blank()];
+let jobId = null, logSince = 0, timer = null;
+
+function blank() { return { enabled: true, name: '', base_url: '', api_key: '', model: '', concurrency: 1, use_for: [...ROLES] }; }
+// Old saved providers have no use_for: they work on both jobs.
+function roles(p) { const r = Array.isArray(p.use_for) ? p.use_for.map(x => x === 'refine' ? 'review' : x).filter(x => ROLES.includes(x)) : []; return r.length ? r : [...ROLES]; }
+function modeRole(mode) { return mode === 'refine' ? 'review' : 'translate'; }
+function usedFor(p, mode) { return roles(p).includes(modeRole(mode)); }
+providers.forEach(p => p.use_for = roles(p));
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(providers)); }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function headers() { const h = {'Content-Type':'application/json'}; const pw = $('password').value; if (pw) h['X-Password'] = pw; return h; }
+async function post(url, body) {
+  const r = await fetch(url, {method:'POST', headers: headers(), body: JSON.stringify(body)});
+  if (r.status === 401) { $('pwWrap').classList.remove('hidden'); throw new Error('This server needs a password (enter it in step 2).'); }
+  return r.json();
+}
+
+function render() {
+  const tb = $('providers'); tb.innerHTML = '';
+  providers.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" data-k="enabled" ${p.enabled ? 'checked' : ''}></td>
+      <td><input data-k="name" value="${esc(p.name)}" placeholder="my-groq"></td>
+      <td><input data-k="base_url" value="${esc(p.base_url)}" placeholder="https://…/v1"></td>
+      <td><input data-k="api_key" type="password" value="${esc(p.api_key)}" placeholder="key  (or key1, key2, key3)" title="Several keys for the same provider: separate them with commas. When one is rate limited or out of quota the next one is used."></td>
+      <td><input data-k="model" value="${esc(p.model)}" placeholder="model id" list="models-list"></td>
+      <td class="c"><input data-k="concurrency" type="number" min="1" max="32" value="${esc(p.concurrency || 1)}"></td>
+      <td class="use"><span class="roles">
+        <button class="role t ${roles(p).includes('translate') ? 'on' : ''}" data-role="translate" title="Use this API for translation jobs"><span class="tick">${roles(p).includes('translate') ? '✓' : ''}</span>Translate</button>
+        <button class="role r ${roles(p).includes('review') ? 'on' : ''}" data-role="review" title="Use this API for review (refine) jobs"><span class="tick">${roles(p).includes('review') ? '✓' : ''}</span>Review</button>
+      </span></td>
+      <td class="act">
+        <button class="tiny" data-a="models" title="Load model list from this provider">Models</button>
+        <button class="tiny" data-a="test">Test</button>
+        <button class="tiny danger" data-a="del">✕</button>
+        <div class="tiny muted" data-r style="max-width:260px;white-space:normal"></div>
+      </td>`;
+    if (!usedFor(p, selMode)) tr.classList.add('off-mode');
+    tr.querySelectorAll('[data-role]').forEach(b => b.onclick = () => {
+      const r = new Set(roles(p)), k = b.dataset.role;
+      if (r.has(k)) { if (r.size === 1) return flash(res, 'An API needs at least one job. Untick it in "On" to disable it.'); r.delete(k); }
+      else r.add(k);
+      p.use_for = ROLES.filter(x => r.has(x)); save(); render();
+    });
+    tr.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+      const k = inp.dataset.k;
+      p[k] = inp.type === 'checkbox' ? inp.checked : (k === 'concurrency' ? Math.max(1, parseInt(inp.value || '1')) : inp.value.trim());
+      save(); if (k === 'enabled' || k === 'name') updateRoleSummary();
+    }));
+    const res = tr.querySelector('[data-r]');
+    tr.querySelector('[data-a=del]').onclick = () => { providers.splice(i, 1); if (!providers.length) providers.push(blank()); save(); render(); };
+    tr.querySelector('[data-a=test]').onclick = () => testOne(p, res);
+    tr.querySelector('[data-a=models]').onclick = async () => {
+      res.textContent = 'loading models…'; res.className = 'tiny muted';
+      try {
+        const r = await post('/api/models', {provider: p});
+        if (!r.ok) throw new Error(r.error);
+        $('models-list').innerHTML = r.models.map(m => `<option value="${esc(m)}">`).join('');
+        res.textContent = `${r.models.length} models found, click the Model box to pick one.`; res.className = 'tiny ok';
+      } catch (e) { res.textContent = e.message; res.className = 'tiny bad'; }
+    };
+    tb.appendChild(tr);
+  });
+  updateRoleSummary();
+}
+function flash(el, msg) { el.textContent = msg; el.className = 'tiny warn'; }
+function updateRoleSummary() {
+  const on = providers.filter(p => p.enabled && p.name);
+  const t = on.filter(p => usedFor(p, 'translate')).length, r = on.filter(p => usedFor(p, 'refine')).length;
+  $('roleSummary').innerHTML = `Enabled: <b>${t}</b> for translation · <b>${r}</b> for review` +
+    (hasInput() ? ` · this ${selMode === 'refine' ? 'review' : 'translation'} job will use <b>${selMode === 'refine' ? r : t}</b>` : '');
+}
+document.querySelectorAll('[data-all]').forEach(b => b.onclick = () => {
+  const v = b.dataset.all === 'both' ? [...ROLES] : [b.dataset.all];
+  providers.forEach(p => p.use_for = [...v]); save(); render();
+});
+async function testOne(p, res) {
+  res.textContent = 'testing…'; res.className = 'tiny muted';
+  try {
+    const r = await post('/api/test-provider', {provider: p});
+    if (!r.ok) throw new Error(r.error);
+    const kinfo = r.keys_total > 1 ? ` (${r.keys_ok}/${r.keys_total} keys work${r.keys_ok < r.keys_total ? ': ' + r.keys.filter(k => !k.ok).map(k => '#' + k.key + ' ' + k.kind).join(', ') : ''})` : '';
+    res.innerHTML = `OK in ${r.seconds}s${esc(kinfo)}: <span class="fa">${esc(r.sample)}</span>`; res.className = r.keys_ok < r.keys_total ? 'tiny warn' : 'tiny ok';
+  } catch (e) { res.textContent = e.message; res.className = 'tiny bad'; }
+}
+
+$('add').onclick = () => { providers.push(blank()); save(); render(); };
+$('testAll').onclick = () => document.querySelectorAll('#providers tr').forEach((tr, i) => { if (providers[i].enabled) testOne(providers[i], tr.querySelector('[data-r]')); });
+$('export').onclick = () => {
+  const blob = new Blob([JSON.stringify({providers}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'providers.json'; a.click();
+};
+$('import').onclick = () => $('importFile').click();
+$('importFile').onchange = async e => {
+  try { const d = JSON.parse(await e.target.files[0].text()); providers = (Array.isArray(d) ? d : d.providers).map(p => ({...blank(), ...p})); providers.forEach(p => p.use_for = roles(p)); save(); render(); }
+  catch (err) { alert('Could not read that JSON: ' + err.message); }
+};
+
+// settings persistence
+const SETTINGS = ['chunk','attempts','temp','timeout','instructions','digits','resume','waitApi'];
+const saved = JSON.parse(localStorage.getItem(LS_SET) || '{}');
+SETTINGS.forEach(id => { if (id in saved) { const el = $(id); el.type === 'checkbox' ? el.checked = saved[id] : el.value = saved[id]; } });
+SETTINGS.forEach(id => $(id).addEventListener('change', () => {
+  const o = {}; SETTINGS.forEach(k => { const el = $(k); o[k] = el.type === 'checkbox' ? el.checked : el.value; });
+  localStorage.setItem(LS_SET, JSON.stringify(o));
+}));
+
+// ---- file drop zones: translate vs refine ----
+let selFile = null, selMode = 'translate', jobMode = 'translate';
+let view = 'file', fileMode = 'translate', textMode = 'translate', jobIsText = false;
+function hasInput() { return view === 'text' ? !!$('textIn').value.trim() : !!selFile; }
+function startLabel() { $('start').textContent = selMode === 'refine' ? 'Refine Persian text' : 'Translate to Persian'; }
+function setView(v) {
+  view = v === 'text' ? 'text' : 'file';
+  $('viewFile').classList.toggle('hidden', view !== 'file'); $('viewText').classList.toggle('hidden', view !== 'text');
+  $('tabFile').classList.toggle('on', view === 'file'); $('tabText').classList.toggle('on', view === 'text');
+  selMode = view === 'text' ? textMode : fileMode;
+  document.title = view === 'text' ? 'Persian Translator · Text' : 'Persian Book Translator';
+  startLabel(); render();
+}
+function setTextMode(m) {
+  textMode = m; if (view === 'text') selMode = m;
+  $('tmTranslate').classList.toggle('on', m === 'translate'); $('tmRefine').classList.toggle('on', m === 'refine');
+  $('tSrcLabel').textContent = m === 'refine' ? 'Your Persian translation' : 'Your text (any language)';
+  $('tOutLabel').textContent = m === 'refine' ? 'Refined Persian' : 'Persian';
+  startLabel(); render();
+}
+$('tmTranslate').onclick = () => setTextMode('translate');
+$('tmRefine').onclick = () => setTextMode('refine');
+$('textIn').addEventListener('input', () => { $('textCount').textContent = $('textIn').value.length.toLocaleString() + ' characters'; updateRoleSummary(); localStorage.setItem('pbt.text.v1', $('textIn').value); });
+$('copyOut').onclick = async () => { try { await navigator.clipboard.writeText($('textOut').value); } catch (e) { $('textOut').select(); document.execCommand('copy'); } $('copyMsg').textContent = 'copied ✔'; setTimeout(() => $('copyMsg').textContent = '', 1500); };
+$('saveOut').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('textOut').value], {type:'text/plain;charset=utf-8'})); a.download = textMode === 'refine' ? 'text.refined.fa.txt' : 'text.fa.txt'; a.click(); };
+window.addEventListener('hashchange', () => setView(location.hash.slice(1)));
+const OK_EXT = ['.epub','.docx','.pdf','.txt','.md','.srt'];
+function pickFile(f, mode) {
+  if (!f) return;
+  const ext = (f.name.match(/\.[^.]+$/) || [''])[0].toLowerCase();
+  if (!OK_EXT.includes(ext)) return alert('Unsupported file type ' + ext + '. Use ' + OK_EXT.join(' '));
+  selFile = f; selMode = fileMode = mode;
+  $('fnTranslate').textContent = mode === 'translate' ? '✔ ' + f.name : '';
+  $('fnRefine').textContent = mode === 'refine' ? '✔ ' + f.name : '';
+  $('zoneTranslate').classList.toggle('sel', mode === 'translate');
+  $('zoneRefine').classList.toggle('sel', mode === 'refine');
+  startLabel(); render();
+}
+[['zoneTranslate','fileTranslate','translate'], ['zoneRefine','fileRefine','refine']].forEach(([z, inp, mode]) => {
+  const zone = $(z), input = $(inp);
+  zone.onclick = () => input.click();
+  input.onchange = () => { pickFile(input.files[0], mode); input.value = ''; };
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); pickFile(e.dataTransfer.files[0], mode); });
+});
+// a file dropped anywhere else on the page should not open in the browser
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+function b64(file) {
+  return new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = bad; r.readAsDataURL(file); });
+}
+
+$('start').onclick = async () => {
+  const f = selFile, isText = view === 'text', text = $('textIn').value;
+  if (isText && !text.trim()) return alert('Paste some text in the box first.');
+  if (!isText && !f) return alert('Drop a file in one of the two boxes first (translate or refine).');
+  const enabled = providers.filter(p => p.enabled);
+  const active = enabled.filter(p => usedFor(p, selMode));
+  const bad = active.find(p => !p.name || !p.base_url || !p.model);
+  if (!enabled.length) return alert('Enable at least one provider.');
+  if (!active.length) return alert(`No enabled provider is set to be used for ${selMode === 'refine' ? 'review' : 'translation'}. Click "${selMode === 'refine' ? 'Review' : 'Translate'}" on at least one provider in step 1.`);
+  if (bad) return alert('Every enabled provider needs a name, a base URL and a model.');
+  $('start').disabled = true;
+  try {
+    const r = await post('/api/jobs', {
+      ...(isText ? {text} : {filename: f.name, file_b64: await b64(f)}), providers: active,
+      settings: { chunk_chars: +$('chunk').value, max_attempts: +$('attempts').value, temperature: +$('temp').value,
+                  timeout: +$('timeout').value, instructions: $('instructions').value,
+                  persian_digits: $('digits').checked, resume: $('resume').checked, wait_for_api: $('waitApi').checked,
+                  mode: selMode }
+    });
+    if (r.error) throw new Error(r.error);
+    jobId = r.job_id; logSince = 0; $('log').textContent = ''; recent = []; pvIndex = -1;
+    $('progressCard').classList.remove('hidden'); $('download').classList.add('hidden'); $('cancel').disabled = false;
+    $('pushProviders').disabled = false; $('pushResult').textContent = '';
+    jobMode = selMode; jobIsText = isText; if (isText) $('textOut').value = ''; resetPreview();
+    poll();
+  } catch (e) { alert(e.message); $('start').disabled = false; }
+};
+$('cancel').onclick = async () => { if (jobId) { await post(`/api/jobs/${jobId}/cancel`, {}); $('cancel').disabled = true; } };
+$('download').onclick = () => { if (jobId) window.location = `/api/jobs/${jobId}/download`; };
+$('pushProviders').onclick = async () => {
+  if (!jobId) return;
+  const active = providers.filter(p => p.enabled && p.name && p.base_url && p.model && usedFor(p, jobMode));
+  if (!active.length) return alert(`Add a provider (name, URL, model, key) with "${jobMode === 'refine' ? 'Review' : 'Translate'}" on in step 1 first.`);
+  try {
+    const r = await post(`/api/jobs/${jobId}/providers`, {providers: active});
+    if (r.error) throw new Error(r.error);
+    $('pushResult').textContent = r.notes.length ? 'Added: ' + r.notes.join(' · ') : 'Nothing new (same providers and keys as the job already has).';
+    $('pushResult').className = r.notes.length ? 'tiny ok' : 'tiny muted';
+  } catch (e) { $('pushResult').textContent = e.message; $('pushResult').className = 'tiny bad'; }
+};
+
+// ---- last translated part ----
+let recent = [], pvIndex = -1;
+function resetPreview() {
+  const refine = jobMode === 'refine';
+  $('pvTitle').textContent = refine ? '✨ Last refined part' : '📄 Last translated part';
+  $('pvSrcLabel').textContent = refine ? 'Before (your translation)' : 'Original';
+  $('pvFaLabel').textContent = refine ? 'After (refined Persian)' : 'Persian';
+  const empty = `<span class="empty">${refine ? 'Nothing refined yet…' : 'No translation yet…'}</span>`;
+  $('pvSrc').innerHTML = empty; $('pvFa').innerHTML = empty;
+  $('pvMeta').textContent = 'waiting for the first part…';
+}
+function showPreview() {
+  if (!recent.length) return;
+  if ($('pvFollow').checked || pvIndex < 0 || pvIndex >= recent.length) pvIndex = recent.length - 1;
+  const it = recent[pvIndex];
+  $('pvSrc').textContent = it.source; $('pvFa').textContent = it.translation;
+  $('pvMeta').textContent = `chunk ${it.chunk} · ${it.provider} · ${it.time}` + (recent.length > 1 ? ` · ${pvIndex + 1}/${recent.length}` : '');
+}
+$('pvPrev').onclick = () => { $('pvFollow').checked = false; pvIndex = Math.max(0, pvIndex - 1); showPreview(); };
+$('pvNext').onclick = () => { pvIndex = Math.min(recent.length - 1, pvIndex + 1); if (pvIndex === recent.length - 1) $('pvFollow').checked = true; showPreview(); };
+function fmtDur(s) {
+  s = Math.max(0, Math.round(s));
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+  return h ? `${h}h ${m}m` : m ? `${m}m ${sec}s` : `${sec}s`;
+}
+
+async function poll() {
+  clearTimeout(timer);
+  try {
+    const r = await (await fetch(`/api/jobs/${jobId}?since=${logSince}`, {headers: headers()})).json();
+    if (r.logs && r.logs.length) { const L = $('log'); L.textContent += r.logs.join('\n') + '\n'; L.scrollTop = L.scrollHeight; }
+    logSince = r.log_count || logSince;
+    $('bar').style.width = r.percent + '%';
+    const cls = {done:'ok', error:'bad', cancelled:'warn', waiting:'warn'}[r.status] || '';
+    $('status').textContent = r.status; $('status').className = 'pill ' + cls;
+    $('summary').textContent = `${r.done_chunks}/${r.total_chunks} chunks · ${r.total_segments} segments` +
+      (r.resumed_segments ? ` · ${r.resumed_segments} resumed` : '') +
+      (r.failed_segments ? ` · ${r.failed_segments} untranslated` : '') +
+      (r.error ? ` · ${r.error}` : '');
+    const finished = ['done','error','cancelled'].includes(r.status);
+    $('sPct').textContent = r.percent + '%';
+    $('sElapsed').textContent = fmtDur(r.elapsed);
+    $('sSpeed').textContent = r.chars_per_min ? `${r.chars_per_min.toLocaleString()} chars/min` : '-';
+    if (finished) { $('sEta').textContent = r.status === 'done' ? 'finished' : '-'; $('sEnd').textContent = '-'; }
+    else if (r.status === 'waiting') { $('sEta').textContent = 'paused'; $('sEnd').textContent = '-'; }
+    else if (r.eta_seconds != null) {
+      $('sEta').textContent = '~' + fmtDur(r.eta_seconds);
+      $('sEnd').textContent = new Date(Date.now() + r.eta_seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    } else { $('sEta').textContent = 'calculating…'; $('sEnd').textContent = '-'; }
+    const wb = $('waitBanner');
+    if (r.status === 'waiting') {
+      wb.innerHTML = `⏸ <b>Paused, nothing is lost.</b> ${esc(r.wait_reason)}<br>Add a new provider or put an extra key (comma separated) in step 1, then press <b>+ Add to running job</b>. Or press Stop and continue later with the same file.`;
+      wb.classList.remove('hidden');
+    } else wb.classList.add('hidden');
+    if (r.recent && r.recent.length) {
+      const lastOld = recent.length ? recent[recent.length - 1] : null, lastNew = r.recent[r.recent.length - 1];
+      if (!lastOld || lastOld.chunk !== lastNew.chunk || lastOld.time !== lastNew.time) { recent = r.recent; showPreview(); }
+    }
+    $('pstats').innerHTML = (r.providers || []).map(p => `<tr><td>${esc(p.name)}</td><td class="muted">${esc(p.model)}</td>
+      <td class="${p.keys_usable ? '' : 'bad'}" title="${esc((p.keys || []).map((k, i) => `#${i + 1} ${k.key}: ${k.dead ? 'rejected' : k.usable ? 'ok' : (k.kind === 'quota' ? 'out of quota' : 'rate limited') + ', retry in ' + fmtDur(k.retry_in)} · ${k.uses} uses`).join('\n'))}">${p.keys_usable}/${p.keys_total}</td>
+      <td>${p.done}</td><td class="${p.failed ? 'warn' : ''}">${p.failed}</td><td>${p.avg_seconds ?? '-'}${p.avg_seconds ? 's' : ''}</td>
+      <td class="${p.status === 'disabled' ? 'bad' : p.status === 'working' ? 'ok' : 'muted'}" title="${esc(p.reason)}">${esc(p.status)}${p.reason ? ': ' + esc(p.reason.slice(0, 80)) : ''}</td></tr>`).join('');
+    if (['done','error','cancelled'].includes(r.status)) {
+      $('start').disabled = false; $('cancel').disabled = true; $('pushProviders').disabled = true; $('waitBanner').classList.add('hidden');
+      if (r.output_name) { $('download').classList.remove('hidden'); $('download').textContent = 'Download ' + r.output_name; }
+      if (jobIsText && r.output_name) {
+        try { const t = await (await fetch(`/api/jobs/${jobId}/text`, {headers: headers()})).json(); if (t.text != null) $('textOut').value = t.text; } catch (e) {}
+      }
+      return;
+    }
+  } catch (e) { /* server busy, retry */ }
+  timer = setTimeout(poll, 1000);
+}
+$('textIn').value = localStorage.getItem('pbt.text.v1') || '';
+$('textCount').textContent = $('textIn').value.length.toLocaleString() + ' characters';
+setView(location.hash.slice(1));
+</script>
+<footer style="text-align:center;font-size:12px;opacity:.7;margin:28px 0 16px">
+  Persian Book Translator v{{VERSION}} &middot; AGPL-3.0 &middot;
+  <a href="{{REPO_URL}}" target="_blank" rel="noopener">Source code</a> &middot;
+  based on <a href="{{UPSTREAM_URL}}" target="_blank" rel="noopener">TranslateBooksWithLLMs</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,8 @@
+providers.json
+data/
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+PersianBookTranslator_Data/

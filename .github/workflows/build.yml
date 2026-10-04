@@ -1,0 +1,49 @@
+name: Build standalone apps
+
+# Runs when you push a tag like v1.1.0 (or by hand from the Actions tab).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to attach files to the Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: Windows }
+          - { os: macos-latest,   name: macOS }
+          - { os: ubuntu-latest,  name: Linux }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pyinstaller
+      - run: python build_standalone.py
+      - name: Self-test the built program
+        shell: bash
+        run: |
+          if [ -f dist/PersianBookTranslator.exe ]; then ./dist/PersianBookTranslator.exe --selftest; else ./dist/PersianBookTranslator --selftest; fi
+      - name: Package
+        shell: bash
+        run: |
+          mkdir out
+          cp LICENSE README.md providers.example.json out/
+          if [ -f dist/PersianBookTranslator.exe ]; then cp dist/PersianBookTranslator.exe out/; else cp dist/PersianBookTranslator out/; fi
+          python -c "import shutil; shutil.make_archive('PersianBookTranslator-${{ matrix.name }}', 'zip', 'out')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PersianBookTranslator-${{ matrix.name }}
+          path: PersianBookTranslator-${{ matrix.name }}.zip
+      - name: Attach to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: PersianBookTranslator-${{ matrix.name }}.zip
+          generate_release_notes: true
