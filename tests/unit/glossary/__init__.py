@@ -1,1 +1,0 @@
-"""Glossary unit tests package."""
